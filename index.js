@@ -16,6 +16,13 @@ const TOKEN = process.env.DISCORD_TOKEN;
 // Liste des ID des salons spécifiques où le bot doit intervenir
 const allowedChannels = ["1278672736910311465", "1284829796290793593"];
 
+// Compteurs de statistiques
+let geReplacementCount = 0;
+let myrtilleReactionCount = 0;
+let sanglierReactionCount = 0;
+let quoiCount = 0;
+let nonCount = 0;
+
 client.once("ready", () => {
     console.log("Le bot est prêt !");
 });
@@ -23,7 +30,7 @@ client.once("ready", () => {
 // Ajout du heartbeat pour garder l'instance active
 setInterval(() => {
     console.log('Heartbeat');
-}, 60000); // Toutes les 5s
+}, 60000); // Toutes les 60s
 
 client.on("messageCreate", async (message) => {
     // Ne pas répondre aux messages du bot lui-même
@@ -44,7 +51,9 @@ client.on("messageCreate", async (message) => {
             .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
             .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1G") // gé alone
             .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé/gi, "-G");
-            console.log("G modified");
+        console.log("G modified");
+        geReplacementCount++; // Incrémente le compteur pour gé
+        console.log(`Compteur de remplacement de "gé" : ${geReplacementCount}`);
         modified = true;
     }
 
@@ -54,6 +63,8 @@ client.on("messageCreate", async (message) => {
             const reactionEmoji = "🫐"; // Utilise le code Unicode de l'emoji
             await message.react(reactionEmoji);
             console.log("Blue berry added");
+            myrtilleReactionCount++; // Incrémente le compteur pour myrtille
+            console.log(`Compteur de réactions "myrtille" : ${myrtilleReactionCount}`);
         } catch (error) {
             console.error("Erreur lors de l'ajout de la réaction :", error);
         }
@@ -65,6 +76,8 @@ client.on("messageCreate", async (message) => {
             const reactionEmoji = "🐗"; // Utilise le code Unicode de l'emoji
             await message.react(reactionEmoji);
             console.log("Sanglier added");
+            sanglierReactionCount++; // Incrémente le compteur pour sanglier
+            console.log(`Compteur de réactions "sanglier" : ${sanglierReactionCount}`);
         } catch (error) {
             console.error("Erreur lors de l'ajout de la réaction :", error);
         }
@@ -81,23 +94,30 @@ client.on("messageCreate", async (message) => {
 
     const words = newMessage.split(/\s+/);
     const lastWord = words[words.length - 1].toLowerCase();
+
+    // Ajoute "feur" si le message se termine par "quoi"
     if (lastWord === "quoi" || lastWord === "quoi?" || lastWord === "quoi " || lastWord === "quoi ?") {
         try {
             await message.channel.send("feur");
+            quoiCount++; // Incrémente le compteur pour "quoi"
+            console.log(`Compteur de "quoi" : ${quoiCount}`);
         } catch (error) {
             console.error("Erreur lors de l'envoi du message :", error);
         }
     }
 
+    // Ajoute "bril" si le message se termine par "non"
     if (lastWord === "non" || lastWord === "non." || lastWord === "non ") {
         try {
             await message.channel.send("bril");
+            nonCount++; // Incrémente le compteur pour "non"
+            console.log(`Compteur de "non" : ${nonCount}`);
         } catch (error) {
             console.error("Erreur lors de l'envoi du message :", error);
         }
     }
 
-    // Si le message a été modifié, envoie le nouveau message et supprime-le après 10 secondes
+    // Si le message a été modifié, envoie le nouveau message et supprime-le après 30 secondes
     if (modified) {
         try {
             const sentMessage = await message.channel.send(newMessage);
@@ -110,7 +130,7 @@ client.on("messageCreate", async (message) => {
                             err,
                         ),
                     );
-            }, 30000); // 10 secondes
+            }, 30000); // 30 secondes
         } catch (err) {
             console.error("Erreur lors de l'envoi du message :", err);
         }

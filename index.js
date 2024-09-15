@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 
 const client = new Client({
-    intents: [
+    intents: [ 
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,

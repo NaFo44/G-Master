@@ -22,6 +22,7 @@ let myrtilleReactionCount = 0;
 let sanglierReactionCount = 0;
 let quoiCount = 0;
 let nonCount = 0;
+let quantiqueCount = 0;
 
 client.once("ready", () => {
     console.log("Le bot est prêt !");
@@ -89,6 +90,8 @@ client.on("messageCreate", async (message) => {
             /quantique/gi,
             "[quan-tic tac](<https://www.youtube.com/watch?v=fmvqz0_KFX0>)",
         );
+        quantiqueCount++;
+        console.log(`Compteur de Quantique : ${quantiqueCount}`);
         modified = true;
     }
 

@@ -77,7 +77,6 @@ client.on("messageCreate", async (message) => {
         }
     }
 
-    const words = newMessage.split(/\s+/);
     const lastWord = words[words.length - 1].toLowerCase();
     if (lastWord === "non" || lastWord === "non." || lastWord === "non ") {
         try {

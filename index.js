@@ -76,8 +76,7 @@ client.on("messageCreate", async (message) => {
             console.error("Erreur lors de l'envoi du message :", error);
         }
     }
-
-    const lastWord = words[words.length - 1].toLowerCase();
+    
     if (lastWord === "non" || lastWord === "non." || lastWord === "non ") {
         try {
             await message.channel.send("bril");

@@ -69,9 +69,19 @@ client.on("messageCreate", async (message) => {
 
     const words = newMessage.split(/\s+/);
     const lastWord = words[words.length - 1].toLowerCase();
-    if (lastWord === "quoi") {
+    if (lastWord === "quoi" || lastWord === "quoi?" || lastWord === "quoi " || lastWord === "quoi ?") {
         try {
             await message.channel.send("feur");
+        } catch (error) {
+            console.error("Erreur lors de l'envoi du message :", error);
+        }
+    }
+
+    const words = newMessage.split(/\s+/);
+    const lastWord = words[words.length - 1].toLowerCase();
+    if (lastWord === "non" || lastWord === "non." || lastWord === "non ") {
+        try {
+            await message.channel.send("bril");
         } catch (error) {
             console.error("Erreur lors de l'envoi du message :", error);
         }

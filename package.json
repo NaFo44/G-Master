@@ -1,0 +1,15 @@
+{
+  "name": "g-master",
+  "version": "1.0.0",
+  "description": "Un bot Discord qui remplace les syllabes 'gé' par 'G-'",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=16.6.0"
+  }
+}

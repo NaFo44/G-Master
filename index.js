@@ -23,7 +23,7 @@ client.once("ready", () => {
 // Ajout du heartbeat pour garder l'instance active
 setInterval(() => {
     console.log('Heartbeat');
-}, 300000); // Toutes les 5 minutes (300000 ms)
+}, 5000; // Toutes les 5 minutes (300000 ms)
 
 client.on("messageCreate", async (message) => {
     // Ne pas répondre aux messages du bot lui-même

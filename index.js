@@ -13,6 +13,9 @@ const client = new Client({
 // Utilisez la variable d'environnement pour le token
 const TOKEN = process.env.DISCORD_TOKEN;
 
+// Liste des ID des salons spécifiques où le bot doit intervenir
+const allowedChannels = ["1278672736910311465", "1284829796290793593"];
+
 client.once("ready", () => {
     console.log("Le bot est prêt !");
 });
@@ -21,6 +24,9 @@ client.on("messageCreate", async (message) => {
     // Ne pas répondre aux messages du bot lui-même
     if (message.author.bot) return;
 
+    // Vérifie si le message provient d'un salon autorisé
+    if (!allowedChannels.includes(message.channel.id)) return;
+
     // Détermine si le message contient "gé", "myrtille", ou "quantique"
     let newMessage = message.content;
     let modified = false;
@@ -28,10 +34,10 @@ client.on("messageCreate", async (message) => {
     // Remplace "gé" par "G-" au début ou milieu, et "-G" à la fin d'un mot
     if (newMessage.toLowerCase().includes("gé")) {
         newMessage = newMessage
-    .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1-G-")
-    .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
-    .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1G") // gé alone
-    .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé/gi, "-G")
+            .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1-G-")
+            .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
+            .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1G") // gé alone
+            .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé/gi, "-G");
 
         modified = true;
     }
@@ -74,7 +80,7 @@ client.on("messageCreate", async (message) => {
             console.error("Erreur lors de l'envoi du message :", error);
         }
     }
-    
+
     if (lastWord === "non" || lastWord === "non." || lastWord === "non ") {
         try {
             await message.channel.send("bril");
@@ -82,7 +88,7 @@ client.on("messageCreate", async (message) => {
             console.error("Erreur lors de l'envoi du message :", error);
         }
     }
-    
+
     // Si le message a été modifié, envoie le nouveau message et supprime-le après 10 secondes
     if (modified) {
         try {
@@ -96,7 +102,7 @@ client.on("messageCreate", async (message) => {
                             err,
                         ),
                     );
-            }, 10000); // 10 secondes
+            }, 30000); // 10 secondes
         } catch (err) {
             console.error("Erreur lors de l'envoi du message :", err);
         }

@@ -33,12 +33,13 @@ client.on("messageCreate", async (message) => {
 
     // Remplace "gé" par "G-" au début ou milieu, et "-G" à la fin d'un mot
     if (newMessage.toLowerCase().includes("gé")) {
+        console.log("G detected");
         newMessage = newMessage
             .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1-G-")
             .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
             .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1G") // gé alone
             .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé/gi, "-G");
-
+            console.log("G modified");
         modified = true;
     }
 
@@ -47,6 +48,7 @@ client.on("messageCreate", async (message) => {
         try {
             const reactionEmoji = "🫐"; // Utilise le code Unicode de l'emoji
             await message.react(reactionEmoji);
+            console.log("Blue berry added");
         } catch (error) {
             console.error("Erreur lors de l'ajout de la réaction :", error);
         }
@@ -57,6 +59,7 @@ client.on("messageCreate", async (message) => {
         try {
             const reactionEmoji = "🐗"; // Utilise le code Unicode de l'emoji
             await message.react(reactionEmoji);
+            console.log("Sanglier added");
         } catch (error) {
             console.error("Erreur lors de l'ajout de la réaction :", error);
         }

@@ -28,12 +28,10 @@ client.on("messageCreate", async (message) => {
     // Remplace "gé" par "G-" au début ou milieu, et "-G" à la fin d'un mot
     if (newMessage.toLowerCase().includes("gé")) {
         newMessage = newMessage
-            .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()])gé([[\]\s.,\/#!$%\^&\*;:{}=\-_`~()]|$)/gi, "$1G$2")
-            .replaceAll(/gégé([[\]\s.,\/#!$%\^&\*;:{}=\-_`~()]|$)/gi, "G-G$1")
-            .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()])gé/gi, "$1G-")
-            .replaceAll(/gé([[\]\s.,\/#!$%\^&\*;:{}=\-_`~()]|$)/gi, "-G$1")
-            .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()])gé([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()])/gi, "$1G-$2")
-            .replaceAll(/gé/gi, "-G-"); // Ajout du cas supplémentaire pour gérer les occurrences de "gé" au milieu d'un mot
+    .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()]|$)/gi, "$1-G-")
+    .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()]|$)/gi, "G-")
+    .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()]|$)/gi, "$1G") // gé alone
+    .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()])gé/gi, "-G")
 
         modified = true;
     }

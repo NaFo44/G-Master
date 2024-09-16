@@ -28,11 +28,6 @@ client.once("ready", () => {
     console.log("Le bot est prêt !");
 });
 
-// Ajout du heartbeat pour garder l'instance active
-setInterval(() => {
-    console.log('Ping');
-}, 60000); // Toutes les 60s
-
 client.on("messageCreate", async (message) => {
     // Ne pas répondre aux messages du bot lui-même
     if (message.author.bot) return;

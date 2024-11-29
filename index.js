@@ -27,7 +27,7 @@ import('dotenv').then((dotenv) => {
     dotenv.config();
 
     const TOKEN = process.env.DISCORD_TOKEN;
-    const allowedChannels = ["1278672736910311465", "1284829796290793593", "1278662594135330841"];
+    const allowedChannels = ["1278672736910311465", "1284829796290793593", "1278662594135330841", "1294338628557869156"];
     const authorizedUserId = "1043860463903051846";
 
     let geReplacementCount = 0;

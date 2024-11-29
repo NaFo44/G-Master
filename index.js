@@ -1,19 +1,19 @@
-const { Client, GatewayIntentBits } = require("discord.js");
-const express = require("express");
-const app = express();
-const {
+import 'dotenv/config';
+import { Client, GatewayIntentBits } from 'discord.js';
+import express from 'express';
+import {
     joinVoiceChannel,
     createAudioPlayer,
     createAudioResource,
     AudioPlayerStatus,
     entersState,
     VoiceConnectionStatus,
-} = require("@discordjs/voice");
-const googleTTS = require("google-tts-api");
-const fs = require("fs");
-const path = require("path");
-const fetch = require("node-fetch");
+} from '@discordjs/voice';
+import googleTTS from 'google-tts-api';
+import fs from 'fs';
+import path from 'path';
 
+const app = express();
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -156,6 +156,7 @@ client.on("messageCreate", async (message) => {
         const tempFile = path.join(__dirname, "message.mp3");
 
         try {
+            const fetch = (await import('node-fetch')).default;
             const response = await fetch(audioUrl);
             const buffer = await response.buffer();
             fs.writeFileSync(tempFile, buffer);

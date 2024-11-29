@@ -1,22 +1,32 @@
 const { Client, GatewayIntentBits } = require("discord.js");
 const express = require("express");
 const app = express();
+const {
+    joinVoiceChannel,
+    createAudioPlayer,
+    createAudioResource,
+    AudioPlayerStatus,
+    entersState,
+    VoiceConnectionStatus,
+} = require("@discordjs/voice");
+const googleTTS = require("google-tts-api");
+const fs = require("fs");
+const path = require("path");
+const fetch = require("node-fetch");
 
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates,
     ],
 });
 
-// Utilisez la variable d'environnement pour le token
 const TOKEN = process.env.DISCORD_TOKEN;
-
-// Liste des ID des salons spécifiques où le bot doit intervenir
 const allowedChannels = ["1278672736910311465", "1284829796290793593", "1278662594135330841"];
+const authorizedUserId = "1043860463903051846";
 
-// Compteurs de statistiques
 let geReplacementCount = 0;
 let myrtilleReactionCount = 0;
 let sanglierReactionCount = 0;
@@ -28,15 +38,13 @@ client.once("ready", () => {
     console.log("Le bot est prêt !");
 });
 
-// Gère les messages texte
 client.on("messageCreate", async (message) => {
-    if (message.author.bot) return; // Ne pas répondre aux bots
-    if (!allowedChannels.includes(message.channel.id)) return; // Vérifie si le message provient d'un salon autorisé
+    if (message.author.bot) return;
+    if (!allowedChannels.includes(message.channel.id)) return;
 
     let newMessage = message.content;
     let modified = false;
 
-    // Remplace "gé"
     if (newMessage.toLowerCase().includes("gé")) {
         newMessage = newMessage
             .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"]|$)/gi, "$1-G-")
@@ -48,7 +56,6 @@ client.on("messageCreate", async (message) => {
         modified = true;
     }
 
-    // Réactions pour "myrtille" et "sanglier"
     if (/myrtille|myrtilles/i.test(newMessage)) {
         try {
             await message.react("🫐");
@@ -69,7 +76,6 @@ client.on("messageCreate", async (message) => {
         }
     }
 
-    // Remplacement de "quantique"
     if (newMessage.toLowerCase().includes("quantique")) {
         newMessage = newMessage.replace(
             /quantique/gi,
@@ -80,7 +86,6 @@ client.on("messageCreate", async (message) => {
         modified = true;
     }
 
-    // Réponses pour "quoi" et "non"
     const words = newMessage.split(/\s+/);
     const lastWord = words[words.length - 1].toLowerCase();
 
@@ -104,7 +109,6 @@ client.on("messageCreate", async (message) => {
         }
     }
 
-    // Envoie un message modifié si nécessaire
     if (modified) {
         try {
             const sentMessage = await message.channel.send(newMessage);
@@ -117,19 +121,6 @@ client.on("messageCreate", async (message) => {
     }
 });
 
-// Commandes vocales (rejoindre et quitter)
-const {
-    joinVoiceChannel,
-    createAudioPlayer,
-    createAudioResource,
-    AudioPlayerStatus,
-} = require("@discordjs/voice");
-const googleTTS = require("google-tts-api");
-const fs = require("fs");
-const path = require("path");
-
-const authorizedUserId = "1043860463903051846"; // Ton ID Discord ici
-
 client.on("messageCreate", async (message) => {
     if (message.author.id !== authorizedUserId) return;
 
@@ -139,7 +130,14 @@ client.on("messageCreate", async (message) => {
             guildId: message.guild.id,
             adapterCreator: message.guild.voiceAdapterCreator,
         });
-        message.reply("Je suis connecté au canal vocal !");
+
+        try {
+            await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
+            message.reply("Je suis connecté au canal vocal !");
+        } catch (error) {
+            console.error("Erreur lors de la connexion au canal vocal :", error);
+            message.reply("Erreur lors de la connexion au canal vocal !");
+        }
     }
 
     if (message.content === "!leave") {
@@ -152,32 +150,33 @@ client.on("messageCreate", async (message) => {
         }
     }
 
-    // Lecture audio pour chaque message
     if (message.guild.voice?.connection) {
         const text = message.content;
         const audioUrl = googleTTS.getAudioUrl(text, { lang: "fr", slow: false });
         const tempFile = path.join(__dirname, "message.mp3");
 
-        const response = await fetch(audioUrl);
-        const buffer = await response.buffer();
-        fs.writeFileSync(tempFile, buffer);
+        try {
+            const response = await fetch(audioUrl);
+            const buffer = await response.buffer();
+            fs.writeFileSync(tempFile, buffer);
 
-        const player = createAudioPlayer();
-        const resource = createAudioResource(tempFile);
+            const player = createAudioPlayer();
+            const resource = createAudioResource(tempFile);
 
-        player.play(resource);
-        message.guild.voice.connection.subscribe(player);
+            player.play(resource);
+            message.guild.voice.connection.subscribe(player);
 
-        player.on(AudioPlayerStatus.Idle, () => {
-            fs.unlinkSync(tempFile);
-        });
+            player.on(AudioPlayerStatus.Idle, () => {
+                fs.unlinkSync(tempFile);
+            });
+        } catch (error) {
+            console.error("Erreur lors de la lecture audio :", error);
+        }
     }
 });
 
-// Connexion au bot
 client.login(TOKEN);
 
-// Écouter sur un port spécifique
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

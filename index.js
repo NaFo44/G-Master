@@ -1,105 +1,79 @@
-const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes } = require("discord.js");
-const express = require("express");
-const app = express();
-
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-    ],
-});
-
+const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes } = require('discord.js');
 const TOKEN = process.env.DISCORD_TOKEN;
-const CLIENT_ID = process.env.CLIENT_ID; // Remplacez par l'ID de votre bot
-const GUILD_ID = process.env.GUILD_ID; // Remplacez par l'ID de votre serveur
+const CLIENT_ID = '1284631073849872394';
+const GUILD_ID = '1278662593656913930';
 
-// Stockage des scores des utilisateurs
-const userScores = {};
+const bot = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-// Réponses correctes (assurez-vous de remplir les valeurs pour chaque jour)
+// Liste des réponses correctes (indexées par numéro d'énigme)
 const correctAnswers = {
-    1: "réponse1",
-    2: "réponse2",
-    3: "réponse3",
-    // Ajoutez d'autres jours ici...
+    1: "sapin",
+    2: "cadeau",
+    3: "neige",
+    // Ajoute les 24 réponses ici...
 };
 
-// Commande `/avent`
+// Scores des utilisateurs
+const userScores = {};
+
+// Inscription de la commande Slash
 const commands = [
     new SlashCommandBuilder()
-        .setName("avent")
-        .setDescription("Répondez à l'énigme du jour pour gagner des points.")
-        .addIntegerOption((option) =>
-            option
-                .setName("number")
-                .setDescription("Le numéro du jour (1-24)")
-                .setRequired(true),
+        .setName('avent')
+        .setDescription("Répond à une question de l'avent.")
+        .addIntegerOption(option => 
+            option.setName('number')
+                .setDescription("Numéro de la question (1-24)")
+                .setRequired(true)
+                .setMinValue(1)
+                .setMaxValue(24)
         )
-        .addStringOption((option) =>
-            option
-                .setName("answer")
-                .setDescription("Votre réponse à l'énigme")
-                .setRequired(true),
-        ),
-];
+        .addStringOption(option => 
+            option.setName('answer')
+                .setDescription("Votre réponse")
+                .setRequired(true)
+        )
+].map(command => command.toJSON());
 
-const rest = new REST({ version: "10" }).setToken(TOKEN);
+const rest = new REST({ version: '10' }).setToken(TOKEN);
 
-// Enregistre les commandes slash
+// Enregistrement des commandes
 (async () => {
     try {
-        console.log("Enregistrement des commandes slash...");
-        await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
-            body: commands,
-        });
-        console.log("Commandes enregistrées avec succès !");
+        console.log('Enregistrement des commandes...');
+        await rest.put(
+            Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+            { body: commands },
+        );
+        console.log('Commandes enregistrées avec succès.');
     } catch (error) {
-        console.error("Erreur lors de l'enregistrement des commandes :", error);
+        console.error(error);
     }
 })();
 
-// Gère les commandes slash
-client.on("interactionCreate", async (interaction) => {
+// Gestion des événements
+bot.on('ready', () => {
+    console.log(`Bot connecté en tant que ${bot.user.tag}`);
+});
+
+bot.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
 
-    const { commandName } = interaction;
-
-    if (commandName === "avent") {
-        const dayNumber = interaction.options.getInteger("number");
-        const userAnswer = interaction.options.getString("answer").toLowerCase();
+    if (interaction.commandName === 'avent') {
+        const number = interaction.options.getInteger('number');
+        const answer = interaction.options.getString('answer').toLowerCase();
         const userId = interaction.user.id;
 
-        // Vérifie si le jour existe
-        if (!correctAnswers[dayNumber]) {
-            return interaction.reply("Ce jour n'a pas encore été défini !");
-        }
-
-        // Vérifie si la réponse est correcte
-        if (userAnswer === correctAnswers[dayNumber].toLowerCase()) {
+        if (correctAnswers[number] && correctAnswers[number] === answer) {
             // Incrémente le score de l'utilisateur
-            userScores[userId] = (userScores[userId] || 0) + 1;
+            if (!userScores[userId]) userScores[userId] = 0;
+            userScores[userId] += 1;
 
-            return interaction.reply(`Bonne réponse ! Votre score est maintenant de ${userScores[userId]} point(s).`);
+            await interaction.reply(`Bonne réponse ! 🎉 Votre score est maintenant de ${userScores[userId]}.`);
         } else {
-            return interaction.reply("Mauvaise réponse !");
+            await interaction.reply("Mauvaise réponse. 😞 Essayez encore !");
         }
     }
 });
 
-// Connexion au bot
-client.once("ready", () => {
-    console.log("Le bot est prêt !");
-});
-
-client.login(TOKEN).catch(error => {
-    console.error("Erreur lors de la connexion au bot :", error);
-});
-
-// Écoute sur un port spécifique
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-}).on('error', (error) => {
-    console.error("Erreur lors de l'écoute du serveur :", error);
-});
+bot.login(TOKEN);

@@ -1,188 +1,101 @@
-import express from 'express';
-import {
-    joinVoiceChannel,
-    createAudioPlayer,
-    createAudioResource,
-    AudioPlayerStatus,
-    entersState,
-    VoiceConnectionStatus,
-} from '@discordjs/voice';
-import googleTTS from 'google-tts-api';
-import fs from 'fs';
-import path from 'path';
-import { Client, GatewayIntentBits } from 'discord.js';
-
+const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes } = require("discord.js");
+const express = require("express");
 const app = express();
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildVoiceStates,
     ],
 });
 
-// Import dotenv dynamically
-import('dotenv').then((dotenv) => {
-    dotenv.config();
+const TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID; // Remplacez par l'ID de votre bot
+const GUILD_ID = process.env.GUILD_ID; // Remplacez par l'ID de votre serveur
 
-    const TOKEN = process.env.DISCORD_TOKEN;
-    const allowedChannels = ["1278672736910311465", "1284829796290793593", "1278662594135330841", "1294338628557869156"];
-    const authorizedUserId = "1043860463903051846";
+// Stockage des scores des utilisateurs
+const userScores = {};
 
-    let geReplacementCount = 0;
-    let myrtilleReactionCount = 0;
-    let sanglierReactionCount = 0;
-    let quoiCount = 0;
-    let nonCount = 0;
-    let quantiqueCount = 0;
+// Réponses correctes (assurez-vous de remplir les valeurs pour chaque jour)
+const correctAnswers = {
+    1: "réponse1",
+    2: "réponse2",
+    3: "réponse3",
+    // Ajoutez d'autres jours ici...
+};
 
-    client.once("ready", () => {
-        console.log("Le bot est prêt !");
-    });
+// Commande `/avent`
+const commands = [
+    new SlashCommandBuilder()
+        .setName("avent")
+        .setDescription("Répondez à l'énigme du jour pour gagner des points.")
+        .addIntegerOption((option) =>
+            option
+                .setName("number")
+                .setDescription("Le numéro du jour (1-24)")
+                .setRequired(true),
+        )
+        .addStringOption((option) =>
+            option
+                .setName("answer")
+                .setDescription("Votre réponse à l'énigme")
+                .setRequired(true),
+        ),
+];
 
-    client.on("messageCreate", async (message) => {
-        if (message.author.bot) return;
-        if (!allowedChannels.includes(message.channel.id)) return;
+const rest = new REST({ version: "10" }).setToken(TOKEN);
 
-        let newMessage = message.content;
-        let modified = false;
+// Enregistre les commandes slash
+(async () => {
+    try {
+        console.log("Enregistrement des commandes slash...");
+        await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
+            body: commands,
+        });
+        console.log("Commandes enregistrées avec succès !");
+    } catch (error) {
+        console.error("Erreur lors de l'enregistrement des commandes :", error);
+    }
+})();
 
-        if (newMessage.toLowerCase().includes("gé")) {
-            newMessage = newMessage
-                .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"]|$)/gi, "$1-G-")
-                .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"]|$)/gi, "G-")
-                .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"]|$)/gi, "$1G")
-                .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"])gé/gi, "-G");
-            geReplacementCount++;
-            console.log(`Compteur de remplacement de "gé" : ${geReplacementCount}`);
-            modified = true;
+// Gère les commandes slash
+client.on("interactionCreate", async (interaction) => {
+    if (!interaction.isCommand()) return;
+
+    const { commandName } = interaction;
+
+    if (commandName === "avent") {
+        const dayNumber = interaction.options.getInteger("number");
+        const userAnswer = interaction.options.getString("answer").toLowerCase();
+        const userId = interaction.user.id;
+
+        // Vérifie si le jour existe
+        if (!correctAnswers[dayNumber]) {
+            return interaction.reply("Ce jour n'a pas encore été défini !");
         }
 
-        if (/myrtille|myrtilles/i.test(newMessage)) {
-            try {
-                await message.react("🫐");
-                myrtilleReactionCount++;
-                console.log(`Compteur de réactions "myrtille" : ${myrtilleReactionCount}`);
-            } catch (error) {
-                console.error("Erreur lors de l'ajout de la réaction :", error);
-            }
+        // Vérifie si la réponse est correcte
+        if (userAnswer === correctAnswers[dayNumber].toLowerCase()) {
+            // Incrémente le score de l'utilisateur
+            userScores[userId] = (userScores[userId] || 0) + 1;
+
+            return interaction.reply(`Bonne réponse ! Votre score est maintenant de ${userScores[userId]} point(s).`);
+        } else {
+            return interaction.reply("Mauvaise réponse !");
         }
+    }
+});
 
-        if (newMessage.toLowerCase().includes("sanglier")) {
-            try {
-                await message.react("🐗");
-                sanglierReactionCount++;
-                console.log(`Compteur de réactions "sanglier" : ${sanglierReactionCount}`);
-            } catch (error) {
-                console.error("Erreur lors de l'ajout de la réaction :", error);
-            }
-        }
+// Connexion au bot
+client.once("ready", () => {
+    console.log("Le bot est prêt !");
+});
 
-        if (newMessage.toLowerCase().includes("quantique")) {
-            newMessage = newMessage.replace(
-                /quantique/gi,
-                "[quan-tic tac](<https://www.youtube.com/watch?v=fmvqz0_KFX0>)"
-            );
-            quantiqueCount++;
-            console.log(`Compteur de "quantique" : ${quantiqueCount}`);
-            modified = true;
-        }
+client.login(TOKEN);
 
-        const words = newMessage.split(/\s+/);
-        const lastWord = words[words.length - 1].toLowerCase();
-
-        if (["quoi", "quoi?", "quoi ?", "quoi."].includes(lastWord)) {
-            try {
-                await message.channel.send("feur");
-                quoiCount++;
-                console.log(`Compteur de "quoi" : ${quoiCount}`);
-            } catch (error) {
-                console.error("Erreur lors de l'envoi de 'feur' :", error);
-            }
-        }
-
-        if (["non", "non.", "non "].includes(lastWord)) {
-            try {
-                await message.channel.send("bril");
-                nonCount++;
-                console.log(`Compteur de "non" : ${nonCount}`);
-            } catch (error) {
-                console.error("Erreur lors de l'envoi de 'bril' :", error);
-            }
-        }
-
-        if (modified) {
-            try {
-                const sentMessage = await message.channel.send(newMessage);
-                setTimeout(() => {
-                    sentMessage.delete().catch((err) => console.error("Erreur lors de la suppression du message :", err));
-                }, 30000);
-            } catch (err) {
-                console.error("Erreur lors de l'envoi du message :", err);
-            }
-        }
-    });
-
-    client.on("messageCreate", async (message) => {
-        if (message.author.id !== authorizedUserId) return;
-
-        if (message.content === "!join") {
-            const connection = joinVoiceChannel({
-                channelId: message.member.voice.channel.id,
-                guildId: message.guild.id,
-                adapterCreator: message.guild.voiceAdapterCreator,
-            });
-
-            try {
-                await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
-                message.reply("Je suis connecté au canal vocal !");
-            } catch (error) {
-                console.error("Erreur lors de la connexion au canal vocal :", error);
-                message.reply("Erreur lors de la connexion au canal vocal !");
-            }
-        }
-
-        if (message.content === "!leave") {
-            const connection = message.guild.voice?.connection;
-            if (connection) {
-                connection.destroy();
-                message.reply("Déconnecté du canal vocal !");
-            } else {
-                message.reply("Je ne suis pas connecté à un canal vocal !");
-            }
-        }
-
-        if (message.guild.voice?.connection) {
-            const text = message.content;
-            const audioUrl = googleTTS.getAudioUrl(text, { lang: "fr", slow: false });
-            const tempFile = path.join(__dirname, "message.mp3");
-
-            try {
-                const fetch = (await import('node-fetch')).default;
-                const response = await fetch(audioUrl);
-                const buffer = await response.buffer();
-                fs.writeFileSync(tempFile, buffer);
-
-                const player = createAudioPlayer();
-                const resource = createAudioResource(tempFile);
-
-                player.play(resource);
-                message.guild.voice.connection.subscribe(player);
-
-                player.on(AudioPlayerStatus.Idle, () => {
-                    fs.unlinkSync(tempFile);
-                });
-            } catch (error) {
-                console.error("Erreur lors de la lecture audio :", error);
-            }
-        }
-    });
-
-    client.login(TOKEN);
-
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-    });
+// Écoute sur un port spécifique
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });

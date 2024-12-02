@@ -1,15 +1,22 @@
 {
-  "name": "discord-bot",
+  "name": "base-bot",
   "version": "1.0.0",
-  "description": "A Discord bot",
+  "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Guscraftin/base-bot.git"
+  },
+  "author": "Guscraftin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Guscraftin/base-bot/issues"
+  },
+  "homepage": "https://github.com/Guscraftin/base-bot#readme",
   "dependencies": {
-    "discord.js": "^14.0.0",
-    "express": "^4.17.1"
-  },
-  "author": "",
-  "license": "ISC"
+    "discord.js": "^14.6.0"
+  }
 }

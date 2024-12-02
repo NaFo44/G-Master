@@ -92,10 +92,14 @@ client.once("ready", () => {
     console.log("Le bot est prêt !");
 });
 
-client.login(TOKEN);
+client.login(TOKEN).catch(error => {
+    console.error("Erreur lors de la connexion au bot :", error);
+});
 
 // Écoute sur un port spécifique
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+}).on('error', (error) => {
+    console.error("Erreur lors de l'écoute du serveur :", error);
 });

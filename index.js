@@ -78,18 +78,7 @@ client.on("messageCreate", async (message) => {
             console.error("Erreur lors de l'ajout de la réaction :", error);
         }
     }
-    
-    // Planifier le message pour minuit chaque jour
-    schedule.scheduleJob('0 0 * * *', () => {
-        const channelId = '1278672736910311465'; // Remplacez par l'ID du canal où vous voulez envoyer le message
-        const channel = client.channels.cache.get(channelId);
-        if (channel) {
-            channel.send('Bonne année ! 🎉');
-        } else {
-            console.error('Canal introuvable. Assurez-vous que l\'ID est correct.');
-        }
-    });
-    
+
     // Remplace "quantique" par "quantic tac"
     if (newMessage.toLowerCase().includes("quantique")) {
         newMessage = newMessage.replace(

@@ -84,7 +84,6 @@ client.on("messageCreate", async (message) => {
 
     // Le G a finis la chasse
     if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr")) {
-        if (!testchan.includes(message.channel.id)) return;
         try {
             await message.channel.send(messageFin);
             console.log("Chasse terminée");

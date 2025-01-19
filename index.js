@@ -83,7 +83,7 @@ client.on("messageCreate", async (message) => {
     if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr")) {
         if (!testchan.includes(message.channel.id)) return;
         try {
-            await message.channel.send("###BRAVOOO !!!!");
+            await message.channel.send("## BRAVOOO !!!!");
             console.log("Chasse terminée");
         } catch (error) {
             console.error("Erreur lors de l'ajout de la réaction :", error);

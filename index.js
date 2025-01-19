@@ -14,7 +14,7 @@ const client = new Client({
 const TOKEN = process.env.DISCORD_TOKEN;
 
 // Liste des ID des salons spécifiques où le bot doit intervenir
-const allowedChannels = ["1278672736910311465", "1284829796290793593"];
+const allowedChannels = ["1278672736910311465", "1284829796290793593", "1299853826001469561"];
 const testchan = ["1299853826001469561"];
 // Compteurs de statistiques
 let geReplacementCount = 0;

@@ -15,7 +15,7 @@ const TOKEN = process.env.DISCORD_TOKEN;
 
 // Liste des ID des salons spécifiques où le bot doit intervenir
 const allowedChannels = ["1278672736910311465", "1284829796290793593"];
-
+const testchan = ["1299853826001469561"];
 // Compteurs de statistiques
 let geReplacementCount = 0;
 let myrtilleReactionCount = 0;
@@ -79,6 +79,17 @@ client.on("messageCreate", async (message) => {
         }
     }
 
+    // Le G a finis la chasse
+    if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr")) {
+        if (!testchan.includes(message.channel.id)) return;
+        try {
+            await message.channel.send("###BRAVOOO !!!!");
+            console.log("Chasse terminée");
+        } catch (error) {
+            console.error("Erreur lors de l'ajout de la réaction :", error);
+        }
+    }
+    
     // Remplace "quantique" par "quantic tac"
     if (newMessage.toLowerCase().includes("quantique")) {
         newMessage = newMessage.replace(

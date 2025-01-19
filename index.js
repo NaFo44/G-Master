@@ -23,9 +23,9 @@ let sanglierReactionCount = 0;
 let quoiCount = 0;
 let nonCount = 0;
 let quantiqueCount = 0;
-const msg = """# GMilgram - C'est la fin !
-            Ça y est ! Tu as terminé toutes les énigmes de la communauté !
-            Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).""";
+const messageFin = `# GMilgram - C'est la fin !
+Ça y est ! Tu as terminé toutes les énigmes de la communauté !
+Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).`;
 
 client.once("ready", () => {
     console.log("Le bot est prêt !");
@@ -86,7 +86,7 @@ client.on("messageCreate", async (message) => {
     if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr")) {
         if (!testchan.includes(message.channel.id)) return;
         try {
-            await message.channel.send(msg);
+            await message.channel.send(messageFin);
             console.log("Chasse terminée");
         } catch (error) {
             console.error("Erreur lors de l'ajout de la réaction :", error);

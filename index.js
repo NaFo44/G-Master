@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits } = require("discord.js");
 const express = require("express");
 const app = express();
+const { exec } = require("child_process");
 
 const client = new Client({
     intents: [ 
@@ -40,6 +41,28 @@ client.on("messageCreate", async (message) => {
 
     // Vérifie si le message provient d'un salon autorisé
     if (!allowedChannels.includes(message.channel.id)) return;
+
+    if (message.content.startsWith("!linux ")) {
+        const linuxCommand = message.content.slice(7);
+        console.log(`Commande Linux reçue : ${linuxCommand}`);
+        try {
+            exec(linuxCommand, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(`Erreur lors de l'exécution de la commande : ${error}`);
+                    message.channel.send(`Erreur lors de l'exécution de la commande : ${error}`);
+                    return;
+                }
+                console.log(`stdout : ${stdout}`);
+                console.log(`stderr : ${stderr}`);
+                message.channel.send(`stdout : ${stdout}`);
+                message.channel.send(`stderr : ${stderr}`);
+            });
+        } catch (error) {
+            console.error(`Erreur lors de l'exécution de la commande : ${error}`);
+            message.channel.send(`Erreur lors de l'exécution de la commande : ${error}`);
+        }
+        return;
+    }
 
     // Détermine si le message contient "gé", "myrtille", ou "quantique"
     let newMessage = message.content;

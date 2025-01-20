@@ -30,9 +30,7 @@ Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas bes
 
 client.once("ready", () => {
     console.log("Le bot est prêt !");
-    console.log(`Connecté en tant que ${client.user.tag}`);
-    client.user.setStatus('online'); // Définit le statut sur "en ligne"
-    client.user.setActivity('En ligne !', { type: 'PLAYING' });
+
 });
 
 client.on("messageCreate", async (message) => {

@@ -15,7 +15,7 @@ const TOKEN = process.env.DISCORD_TOKEN;
 
 // Liste des ID des salons spécifiques où le bot doit intervenir
 const allowedChannels = ["1278672736910311465", "1284829796290793593", "1299853826001469561"];
-const testchan = ["1299853826001469561"];
+const TARGET_USER_ID = '819527758501642290';
 // Compteurs de statistiques
 let geReplacementCount = 0;
 let myrtilleReactionCount = 0;
@@ -86,7 +86,7 @@ client.on("messageCreate", async (message) => {
     }
 
     // Le G a finis la chasse
-    if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr")) {
+    if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr") && message.author.id === TARGET_USER_ID) {
         try {
             await message.channel.send(messageFin);
             console.log("Chasse terminée");

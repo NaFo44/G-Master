@@ -15,7 +15,7 @@ const TOKEN = process.env.DISCORD_TOKEN;
 
 // Liste des ID des salons spécifiques où le bot doit intervenir
 const allowedChannels = ["1278672736910311465", "1284829796290793593", "1299853826001469561"];
-const TARGET_USER_ID = '819527758501642290';
+const TARGET_USER_ID = '1043860463903051846'; // '819527758501642290';
 // Compteurs de statistiques
 let geReplacementCount = 0;
 let myrtilleReactionCount = 0;

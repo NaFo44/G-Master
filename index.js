@@ -15,7 +15,7 @@ const TOKEN = process.env.DISCORD_TOKEN;
 
 // Liste des ID des salons spécifiques où le bot doit intervenir
 const allowedChannels = ["1278672736910311465", "1284829796290793593", "1299853826001469561"];
-const TARGET_USER_ID = '1043860463903051846'; // '819527758501642290';
+const TARGET_USER_ID = '819527758501642290'; // '1043860463903051846'; // 
 // Compteurs de statistiques
 let geReplacementCount = 0;
 let myrtilleReactionCount = 0;
@@ -25,7 +25,8 @@ let nonCount = 0;
 let quantiqueCount = 0;
 const messageFin = `# GMilgram - C'est la fin !
 Ça y est ! Tu as terminé toutes les énigmes de la communauté !
-Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).`;
+Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).
+||@everyone||`;
 
 client.once("ready", () => {
     console.log("Le bot est prêt !");

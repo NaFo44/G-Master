@@ -16,7 +16,6 @@ const TOKEN = process.env.DISCORD_TOKEN;
 // Liste des ID des salons spécifiques où le bot doit intervenir
 const allowedChannels = ["1278672736910311465", "1284829796290793593", "1299853826001469561"];
 const TARGET_USER_ID = '819527758501642290'; // '1043860463903051846'; // 
-const TARGET_EYES = '483220526555332608';
 // Compteurs de statistiques
 let geReplacementCount = 0;
 let myrtilleReactionCount = 0;
@@ -59,16 +58,6 @@ client.on("messageCreate", async (message) => {
         geReplacementCount++; // Incrémente le compteur pour gé
         console.log(`Compteur de remplacement de "gé" : ${geReplacementCount}`);
         modified = true;
-    }
-    
-    if (message.author.id === TARGET_EYES) {
-        try {
-            const reactionEmoji = "👀"; // Utilise le code Unicode de l'emoji
-            await message.react(reactionEmoji);
-            console.log("Eyes added");
-        } catch (error) {
-            console.error("Erreur lors de l'ajout de la réaction :", error);
-        }
     }
 
     // Ajoute une réaction lorsque le mot "myrtille" ou "myrtilles" est détecté

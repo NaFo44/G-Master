@@ -49,6 +49,7 @@ const searchCommand = new SlashCommandBuilder()
             .setDescription("Le mot à chercher")
             .setRequired(true)
     )
+    .setDefaultPermission(true)  // Assure-toi que la permission par défaut est `true`
     .toJSON();
 
 async function registerCommands() {

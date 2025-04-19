@@ -1,9 +1,12 @@
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require("discord.js");
 const express = require("express");
-const app = express();
+const fs = require("fs");
+const path = require("path");
+require("dotenv").config();
 
+const app = express();
 const client = new Client({
-    intents: [ 
+    intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
@@ -15,7 +18,8 @@ const TOKEN = process.env.DISCORD_TOKEN;
 
 // Liste des ID des salons spécifiques où le bot doit intervenir
 const allowedChannels = ["1278672736910311465", "1284829796290793593", "1299853826001469561"];
-const TARGET_USER_ID = '819527758501642290'; // '1043860463903051846'; // 
+const TARGET_USER_ID = '819527758501642290';
+
 // Compteurs de statistiques
 let geReplacementCount = 0;
 let myrtilleReactionCount = 0;
@@ -23,6 +27,7 @@ let sanglierReactionCount = 0;
 let quoiCount = 0;
 let nonCount = 0;
 let quantiqueCount = 0;
+
 const messageFin = `# GMilgram - C'est la fin !
 Ça y est ! Tu as terminé toutes les énigmes de la communauté !
 Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).
@@ -31,77 +36,166 @@ Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas bes
 client.once("ready", () => {
     console.log("Le bot est prêt !");
     console.log(`Connecté en tant que ${client.user.tag}`);
-    client.user.setStatus('online'); // Définit le statut sur "en ligne"
+    client.user.setStatus('online');
     client.user.setActivity('En ligne !', { type: 'PLAYING' });
 });
 
-client.on("messageCreate", async (message) => {
-    // Ne pas répondre aux messages du bot lui-même
-    if (message.author.bot) return;
+// === Slash command /search ===
 
-    // Vérifie si le message provient d'un salon autorisé
+const searchCommand = new SlashCommandBuilder()
+    .setName("search")
+    .setDescription("Cherche un mot dans les fichiers .tsv")
+    .addStringOption(option =>
+        option.setName("mot")
+            .setDescription("Le mot à chercher")
+            .setRequired(true)
+    )
+    .toJSON();
+
+async function registerCommands() {
+    const rest = new REST({ version: "10" }).setToken(TOKEN);
+    try {
+        console.log("Enregistrement des commandes slash...");
+        await rest.put(
+            Routes.applicationCommands(process.env.CLIENT_ID),
+            { body: [searchCommand] }
+        );
+        console.log("Commandes slash enregistrées.");
+    } catch (error) {
+        console.error("Erreur lors de l'enregistrement :", error);
+    }
+}
+registerCommands();
+
+function extractYouTubeID(filename) {
+    const match = filename.match(/\[([a-zA-Z0-9_-]{11})\]/);
+    return match ? match[1] : null;
+}
+
+function msToHMS(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+    const s = String(totalSeconds % 60).padStart(2, "0");
+    return `${h}:${m}:${s}`;
+}
+
+function searchInFiles(keyword, folderPath) {
+    const lowerKeyword = keyword.toLowerCase();
+    const results = [];
+
+    const files = fs.readdirSync(folderPath).filter(file => file.endsWith(".tsv"));
+
+    for (const file of files) {
+        const filePath = path.join(folderPath, file);
+        const content = fs.readFileSync(filePath, "utf-8");
+        const lines = content.split("\n");
+
+        for (const line of lines) {
+            if (line.toLowerCase().includes(lowerKeyword)) {
+                const parts = line.trim().split("\t");
+                if (parts.length >= 3) {
+                    const start = parseInt(parts[0], 10);
+                    const end = parseInt(parts[1], 10);
+                    const text = parts.slice(2).join("\t");
+
+                    const videoId = extractYouTubeID(file);
+                    if (videoId) {
+                        const timecode = `${msToHMS(start)} → ${msToHMS(end)}`;
+                        const link = `https://www.youtube.com/watch?v=${videoId}&t=${Math.floor(start / 1000)}s`;
+                        const title = file.replace(`[${videoId}]`, "").replace(".tsv", "").trim();
+                        results.push(`- [${title}](${link}) (${timecode}) : ${text}`);
+                    } else {
+                        results.push(`- ${file} (${start}–${end}) : ${text}`);
+                    }
+                }
+            }
+        }
+    }
+
+    return results;
+}
+
+// === Gestion des slash commands ===
+client.on("interactionCreate", async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+
+    if (interaction.commandName === "search") {
+        const keyword = interaction.options.getString("mot");
+        const folderPath = path.join(__dirname, "data"); // Mets tes fichiers .tsv ici
+
+        const results = searchInFiles(keyword, folderPath);
+
+        if (results.length === 0) {
+            await interaction.reply(`Aucun résultat trouvé pour **${keyword}**.`);
+        } else {
+            const output = results.slice(0, 10).join("\n");
+            const extra = results.length > 10
+                ? `\n\n... et ${results.length - 10} autres résultats.`
+                : "";
+
+            await interaction.reply({
+                content: `**Résultats trouvés pour '${keyword}' :**\n\n${output}${extra}`,
+                ephemeral: false,
+            });
+        }
+    }
+});
+
+// === Gestion des messages textuels ===
+client.on("messageCreate", async (message) => {
+    if (message.author.bot) return;
     if (!allowedChannels.includes(message.channel.id)) return;
 
-    // Détermine si le message contient "gé", "myrtille", ou "quantique"
     let newMessage = message.content;
     let modified = false;
 
-    // Remplace "gé" par "G-" au début ou milieu, et "-G" à la fin d'un mot
     if (newMessage.toLowerCase().includes("gé")) {
         console.log("G detected");
         newMessage = newMessage
             .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1-G-")
             .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
-            .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1G") // gé alone
+            .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1G")
             .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé/gi, "-G");
         console.log("G modified");
-        geReplacementCount++; // Incrémente le compteur pour gé
+        geReplacementCount++;
         console.log(`Compteur de remplacement de "gé" : ${geReplacementCount}`);
         modified = true;
     }
 
-    // Ajoute une réaction lorsque le mot "myrtille" ou "myrtilles" est détecté
     if (/myrtille|myrtilles/i.test(newMessage)) {
         try {
-            const reactionEmoji = "🫐"; // Utilise le code Unicode de l'emoji
-            await message.react(reactionEmoji);
+            await message.react("🫐");
             console.log("Blue berry added");
-            myrtilleReactionCount++; // Incrémente le compteur pour myrtille
+            myrtilleReactionCount++;
             console.log(`Compteur de réactions "myrtille" : ${myrtilleReactionCount}`);
         } catch (error) {
             console.error("Erreur lors de l'ajout de la réaction :", error);
         }
     }
 
-    // Ajoute une réaction lorsque le mot "sanglier" est détecté
     if (newMessage.toLowerCase().includes("sanglier")) {
         try {
-            const reactionEmoji = "🐗"; // Utilise le code Unicode de l'emoji
-            await message.react(reactionEmoji);
+            await message.react("🐗");
             console.log("Sanglier added");
-            sanglierReactionCount++; // Incrémente le compteur pour sanglier
+            sanglierReactionCount++;
             console.log(`Compteur de réactions "sanglier" : ${sanglierReactionCount}`);
         } catch (error) {
             console.error("Erreur lors de l'ajout de la réaction :", error);
         }
     }
 
-    // Le G a finis la chasse
     if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr") && message.author.id === TARGET_USER_ID) {
         try {
             await message.channel.send(messageFin);
             console.log("Chasse terminée");
         } catch (error) {
-            console.error("Erreur lors de l'ajout de la réaction :", error);
+            console.error("Erreur lors de l'envoi du message final :", error);
         }
     }
-    
-    // Remplace "quantique" par "quantic tac"
+
     if (newMessage.toLowerCase().includes("quantique")) {
-        newMessage = newMessage.replace(
-            /quantique/gi,
-            "[quan-tic tac](<https://www.youtube.com/watch?v=fmvqz0_KFX0>)",
-        );
+        newMessage = newMessage.replace(/quantique/gi, "[quan-tic tac](<https://www.youtube.com/watch?v=fmvqz0_KFX0>)");
         quantiqueCount++;
         console.log(`Compteur de Quantique : ${quantiqueCount}`);
         modified = true;
@@ -110,44 +204,34 @@ client.on("messageCreate", async (message) => {
     const words = newMessage.split(/\s+/);
     const lastWord = words[words.length - 1].toLowerCase();
 
-    // Ajoute "feur" si le message se termine par "quoi"
-    if (lastWord === "quoi" || lastWord === "quoi?" || lastWord === "quoi " || lastWord === "quoi ?") {
+    if (["quoi", "quoi?", "quoi ", "quoi ?"].includes(lastWord)) {
         try {
             await message.channel.send("feur");
-            quoiCount++; // Incrémente le compteur pour "quoi"
+            quoiCount++;
             console.log(`Compteur de "quoi" : ${quoiCount}`);
         } catch (error) {
-            console.error("Erreur lors de l'envoi du message :", error);
+            console.error("Erreur lors de l'envoi de 'feur' :", error);
         }
     }
 
-    // Ajoute "bril" si le message se termine par "non"
-    if (lastWord === "non" || lastWord === "non." || lastWord === "non ") {
+    if (["non", "non.", "non "].includes(lastWord)) {
         try {
             await message.channel.send("bril");
-            nonCount++; // Incrémente le compteur pour "non"
+            nonCount++;
             console.log(`Compteur de "non" : ${nonCount}`);
         } catch (error) {
-            console.error("Erreur lors de l'envoi du message :", error);
+            console.error("Erreur lors de l'envoi de 'bril' :", error);
         }
     }
 
-    // Si le message a été modifié, envoie le nouveau message et supprime-le après 30 secondes
     if (modified) {
         try {
             const sentMessage = await message.channel.send(newMessage);
             setTimeout(() => {
-                sentMessage
-                    .delete()
-                    .catch((err) =>
-                        console.error(
-                            "Erreur lors de la suppression du message :",
-                            err,
-                        ),
-                    );
-            }, 30000); // 30 secondes
+                sentMessage.delete().catch(err => console.error("Erreur suppression :", err));
+            }, 30000);
         } catch (err) {
-            console.error("Erreur lors de l'envoi du message :", err);
+            console.error("Erreur lors de l'envoi du message modifié :", err);
         }
     }
 });

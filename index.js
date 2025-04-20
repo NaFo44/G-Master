@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require("discord.js");
 const express = require("express");
 const fs = require("fs");
+const { exec } = require("child_process");
 const path = require("path");
 
 const app = express();
@@ -67,78 +68,34 @@ async function registerCommands() {
 }
 registerCommands();
 
-function extractYouTubeID(filename) {
-    const match = filename.match(/\[([a-zA-Z0-9_-]{11})\]/);
-    return match ? match[1] : null;
-}
-
-function msToHMS(ms) {
-    const totalSeconds = Math.floor(ms / 1000);
-    const h = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
-    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
-    const s = String(totalSeconds % 60).padStart(2, "0");
-    return `${h}:${m}:${s}`;
-}
-
-function searchInFiles(keyword, folderPath) {
-    const lowerKeyword = keyword.toLowerCase();
-    const results = [];
-
-    const files = fs.readdirSync(folderPath).filter(file => file.endsWith(".tsv"));
-
-    for (const file of files) {
-        const filePath = path.join(folderPath, file);
-        const content = fs.readFileSync(filePath, "utf-8");
-        const lines = content.split("\n");
-
-        for (const line of lines) {
-            if (line.toLowerCase().includes(lowerKeyword)) {
-                const parts = line.trim().split("\t");
-                if (parts.length >= 3) {
-                    const start = parseInt(parts[0], 10);
-                    const end = parseInt(parts[1], 10);
-                    const text = parts.slice(2).join("\t");
-
-                    const videoId = extractYouTubeID(file);
-                    if (videoId) {
-                        const timecode = `${msToHMS(start)} → ${msToHMS(end)}`;
-                        const link = `https://www.youtube.com/watch?v=${videoId}&t=${Math.floor(start / 1000)}s`;
-                        const title = file.replace(`[${videoId}]`, "").replace(".tsv", "").trim();
-                        results.push(`- [${title}](${link}) (${timecode}) : ${text}`);
-                    } else {
-                        results.push(`- ${file} (${start}–${end}) : ${text}`);
-                    }
-                }
-            }
-        }
-    }
-
-    return results;
-}
-
 // === Gestion des slash commands ===
 client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === "search") {
         const keyword = interaction.options.getString("mot");
-        const folderPath = path.join(__dirname, "data"); // Mets tes fichiers .tsv ici
 
-        const results = searchInFiles(keyword, folderPath);
+        // Chemin absolu vers ton script
+        const scriptPath = path.join(__dirname, "script.sh");
 
-        if (results.length === 0) {
-            await interaction.reply(`Aucun résultat trouvé pour **${keyword}**.`);
-        } else {
-            const output = results.slice(0, 10).join("\n");
-            const extra = results.length > 10
-                ? `\n\n... et ${results.length - 10} autres résultats.`
-                : "";
+        // Commande à exécuter
+        const command = `${scriptPath} "${keyword}"`;
 
-            await interaction.reply({
-                content: `**Résultats trouvés pour '${keyword}' :**\n\n${output}${extra}`,
-                ephemeral: false,
-            });
-        }
+        // Réponse initiale pour montrer que le bot bosse
+        await interaction.deferReply();
+
+        // Exécution du script
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Erreur d'exécution: ${error.message}`);
+                interaction.editReply("Une erreur est survenue lors de l'exécution du script.");
+                return;
+            }
+
+            if (stderr) {
+                console.warn(`stderr: ${stderr}`);
+            }
+        });
     }
 });
 

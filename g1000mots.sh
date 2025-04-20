@@ -4,6 +4,7 @@
 
 MAX_MATCHES='100'
 MIN_CHARS='4'
+ENABLE_DISCORD="${ENABLE_DISCORD:-false}"
 
 if [ -z "${TSV_DIR}" ]; then
     printf -- 'TSV_DIR environment variable is not defined, aborting\n'

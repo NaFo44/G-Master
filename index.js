@@ -85,29 +85,14 @@ registerCommands();
 // === Gestion des slash commands ===
 
 client.on("interactionCreate", async interaction => {
-  if (!interaction.isChatInputCommand()) return;
-  if (interaction.commandName !== "search") return;
+  if (!interaction.isChatInputCommand() || interaction.commandName !== "search") return;
 
-  const keyword = interaction.options.getString("mot");
+  const keyword   = interaction.options.getString("mot");
   const scriptPath = path.join(__dirname, "g1000mots.sh");
-  const command = `${scriptPath} "${keyword}"`;
+  const command    = `${scriptPath} "${keyword}"`;
 
-  // Affiche le spinner
-  await interaction.deferReply();
-
-  try {
-    const { stdout, stderr } = await exec(command);
-
-    if (stderr) console.warn(`stderr: ${stderr}`);
-
-    // Envoie la sortie du script et stoppe le spinner
-    await interaction.editReply(
-      stdout.length > 0 ? stdout : "Aucun résultat retourné."
-    );
-  } catch (err) {
-    console.error("Erreur d'exécution :", err);
-    await interaction.editReply("Une erreur est survenue lors de l'exécution du script.");
-  }
+  // On lance simplement le script sans répondre ni logger
+  exec(command);
 });
 
 // === Gestion des messages textuels ===

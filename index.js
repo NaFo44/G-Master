@@ -85,16 +85,17 @@ registerCommands();
 // === Gestion des slash commands ===
 
 client.on("interactionCreate", async interaction => {
-  if (!interaction.isChatInputCommand() || interaction.commandName !== "search") return;
+  if (!interaction.isChatInputCommand() || interaction.commandName !== "search")
+    return;
 
-  const keyword   = interaction.options.getString("mot");
+  const mot = interaction.options.getString("mot");
   const scriptPath = path.join(__dirname, "g1000mots.sh");
-  const command    = `${scriptPath} "${keyword}"`;
 
-  // On lance simplement le script sans répondre ni logger
-  exec(command);
+  // Lancement sécurisé du script sans injection possible
+  execFile(scriptPath, [ mot ], (err, stdout, stderr) => {
+    // on ne logue rien, on ne répond à personne ici
+  });
 });
-
 // === Gestion des messages textuels ===
 
 client.on("messageCreate", async message => {

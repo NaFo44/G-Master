@@ -97,8 +97,6 @@ client.on("interactionCreate", async interaction => {
       if (stderr) {
         console.warn(`stderr : ${stderr}`);
       }
-
-      interaction.editReply(stdout);
     });
   }
 });

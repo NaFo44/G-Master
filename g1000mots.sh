@@ -1,17 +1,16 @@
 #!/bin/bash
 
-# définir les variables d'environnement "TSV_DIR" et "DISCORD_TOKEN"
-ENABLE_DISCORD='true'
+# définir les variables d'environnement "TSV_DIR", "DISCORD_TOKEN" et "ENABLE_DISCORD"
 
 MAX_MATCHES='100'
-MIN_CHARS='5'
+MIN_CHARS='4'
 
 if [ -z "${TSV_DIR}" ]; then
     printf -- 'TSV_DIR environment variable is not defined, aborting\n'
     exit '2'
-elif [ -z "${DISCORD_TOKEN}" ]; then
+elif "${ENABLE_DISCORD}" && [ -z "${DISCORD_TOKEN}" ]; then
     printf -- 'DISCORD_TOKEN environment variable is not defined, aborting\n'
-    exit '2'
+    exit '3'
 fi
 
 entire_text=''
@@ -25,7 +24,7 @@ keep_alnum_only() {
 }
 
 show_footer() {
-    printf -- '-# \*cette recherche étant effectuée sur des transcriptions des vidéos de G Milgram réalisées avec [Whisper](<https://github.com/openai/whisper>), les résultats sont susceptibles de contenir des erreurs !\n'
+    printf -- '-# *\*cette recherche étant effectuée sur des transcriptions des vidéos de G Milgram réalisées avec [Whisper](<https://github.com/openai/whisper>), les résultats sont susceptibles de contenir des erreurs !*\n'
 }
 
 send_message_to_discord() {
@@ -33,6 +32,7 @@ send_message_to_discord() {
     message="$(jq -n --arg content "${1}" '{"content": $content}')"
     if "${ENABLE_DISCORD}"; then
         if ! timeout -- '3' curl \
+          -s \
           -d "${message}" \
           -H 'Authorization: Bot '"${DISCORD_TOKEN}" \
           -H "Content-Type: application/json" \
@@ -42,7 +42,7 @@ send_message_to_discord() {
         fi
         sleep -- '0.5'
     else
-        printf -- "${message}"
+        printf -- "${1}"
     fi
 
 }
@@ -57,16 +57,17 @@ main() {
     total_occurences_nb="$(wc -l <<< "${all_lines}")"
     
     if [ -z "${all_lines}" ]; then # "wc -l" returns 1 even if "${all_lines}" is empty (instead of 0)
-        entire_text="$(printf -- '### Le terme `%s` semble\* n'"'"'avoir jamais été prononcé dans une vidéo de G\n' "${search}")"
+        entire_text="$(printf -- '## Le terme `%s` semble\* n'"'"'avoir jamais été prononcé dans une vidéo de G\n' "${search}")"
         entire_text="${entire_text}\n$(show_footer)"
         return '1'
     elif [ "${total_occurences_nb}" -eq '1' ]; then
-        entire_text="$(printf -- '### Le terme `%s` semble\* avoir été prononcé %s fois dans la vidéo suivante :\n' "${search}" "${total_occurences_nb}")"
+        entire_text="$(printf -- '## Le terme `%s` semble\* avoir été prononcé %s fois dans la vidéo suivante :\n' "${search}" "${total_occurences_nb}")"
     else
-        entire_text="$(printf -- '### Le terme `%s` semble\* avoir été prononcé %s fois au total dans les vidéos suivantes :\n' "${search}" "${total_occurences_nb}")"
+        entire_text="$(printf -- '## Le terme `%s` semble\* avoir été prononcé %s fois au total dans les vidéos suivantes :\n' "${search}" "${total_occurences_nb}")"
     fi
 
     last_video=''
+    occurences_per_video='0'
     while IFS= read -r -- 'line'; do
         line_without_number="$(awk -F '.tsv:' -- '{print $1}' <<< "${line}" | cut -c '6-' --)"
         video_id="${line_without_number: -11}"
@@ -74,8 +75,18 @@ main() {
         video_url='https://www.youtube.com/watch?v='"${video_id}"
 
         if [ "${last_video}" != "${video_id}" ]; then
+            if [ "${total_occurences_nb}" -ge "${MAX_MATCHES}" ]; then
+                if [ "${occurences_per_video}" -eq '1' ]; then
+                    entire_text="${entire_text} [${occurences_per_video} occurence]"
+                elif [ "${occurences_per_video}" -ge '2' ]; then
+                    entire_text="${entire_text} [${occurences_per_video} occurences]"
+                fi
+                occurences_per_video='1'
+            fi
             last_video="${video_id}"
             entire_text="${entire_text}\n$(printf -- '- [%s](%s)\n' "${video_name}" '<'"${video_url}"'>')"
+        else
+            ((occurences_per_video++))
         fi
 
         if [ "${total_occurences_nb}" -lt "${MAX_MATCHES}" ]; then
@@ -91,6 +102,16 @@ main() {
         fi
     done <<< "${all_lines}"
 
+    # Oui oui, "Beurk c'est laid ce doublon", mais j'ai pas d'autre solution pour afficher le nombre d'occurences de la dernière vidéo pour le moment...
+    if [ "${total_occurences_nb}" -ge "${MAX_MATCHES}" ]; then
+        if [ "${occurences_per_video}" -eq '1' ]; then
+            entire_text="${entire_text} [${occurences_per_video} occurence]"
+        elif [ "${occurences_per_video}" -ge '2' ]; then
+            entire_text="${entire_text} [${occurences_per_video} occurences]"
+        fi
+    fi
+
+
     if [ "${total_occurences_nb}" -ge "${MAX_MATCHES}" ]; then
         entire_text="${entire_text}\n$(printf -- '### Trop de résultats pour afficher toutes les correspondances, merci d'"'"'affiner la recherche\n')"
     fi
@@ -102,7 +123,7 @@ main "${*}" #2> '/dev/null'
 ### ATTENTION : CODE GÉNÉRÉ PAR MISTRAL AI
 split_text_into_chunks() {
     local text="$1"
-    local max_chunk_size=1990
+    local max_chunk_size=1900
     local IFS=$'\n'
     local paragraphs=($(echo -e "$text"))
     local chunks=()

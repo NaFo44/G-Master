@@ -28,10 +28,10 @@ let quoiCount = 0;
 let nonCount = 0;
 let quantiqueCount = 0;
 
-const messageFin = # GMilgram - C'est la fin !
-Ça y est ! Tu as terminé toutes les énigmes de la communauté !
-Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).
-||@everyone||;
+const messageFin = `# GMilgram - C'est la fin !
+Ça y est ! Tu as terminé toutes les énigmes de la communauté !  
+Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).  
+||@everyone||`;
 
 client.once("ready", () => {
     console.log("Le bot est prêt !");

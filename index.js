@@ -79,7 +79,7 @@ client.on("interactionCreate", async interaction => {
         const scriptPath = path.join(__dirname, "/home/tardis/Documents/g1000mots.sh");
 
         // Commande à exécuter
-        const command = `ls -l`;
+        const command = `${scriptPath} "${keyword}"`;
 
         // Réponse initiale pour montrer que le bot bosse
         await interaction.deferReply();

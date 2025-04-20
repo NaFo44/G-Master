@@ -76,7 +76,7 @@ client.on("interactionCreate", async interaction => {
         const keyword = interaction.options.getString("mot");
 
         // Chemin absolu vers ton script
-        const scriptPath = path.join(__dirname, "script.sh");
+        const scriptPath = path.join(__dirname, "/home/tardis/Documents/g1000mots.sh");
 
         // Commande à exécuter
         const command = `${scriptPath} "${keyword}"`;

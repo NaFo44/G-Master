@@ -1,10 +1,19 @@
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require("discord.js");
+const { 
+  Client, 
+  GatewayIntentBits, 
+  REST, 
+  Routes, 
+  SlashCommandBuilder 
+} = require("discord.js");
 const express = require("express");
 const fs = require("fs");
-const { exec } = require("child_process");
 const path = require("path");
+const { exec: _exec } = require("child_process");
+const { promisify } = require("util");
 
+const exec = promisify(_exec);
 const app = express();
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -17,7 +26,11 @@ const client = new Client({
 const TOKEN = process.env.DISCORD_TOKEN;
 
 // Liste des ID des salons spécifiques où le bot doit intervenir
-const allowedChannels = ["1278672736910311465", "1284829796290793593", "1299853826001469561"];
+const allowedChannels = [
+  "1278672736910311465",
+  "1284829796290793593",
+  "1299853826001469561"
+];
 const TARGET_USER_ID = "819527758501642290";
 
 // Compteurs de statistiques
@@ -45,8 +58,8 @@ client.once("ready", () => {
 const searchCommand = new SlashCommandBuilder()
   .setName("search")
   .setDescription("Cherche un mot dans les fichiers .tsv")
-  .addStringOption(option =>
-    option
+  .addStringOption(opt =>
+    opt
       .setName("mot")
       .setDescription("Le mot à chercher")
       .setRequired(true)
@@ -64,7 +77,7 @@ async function registerCommands() {
     );
     console.log("Commandes slash enregistrées.");
   } catch (error) {
-    console.error("Erreur lors de l'enregistrement :", error);
+    console.error("Erreur lors de l'enregistrement :", error);
   }
 }
 registerCommands();
@@ -73,31 +86,27 @@ registerCommands();
 
 client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
+  if (interaction.commandName !== "search") return;
 
-  if (interaction.commandName === "search") {
-    const keyword = interaction.options.getString("mot");
+  const keyword = interaction.options.getString("mot");
+  const scriptPath = path.join(__dirname, "g1000mots.sh");
+  const command = `${scriptPath} "${keyword}"`;
 
-    // Chemin absolu vers ton script
-    const scriptPath = path.join(__dirname, "g1000mots.sh");
+  // Affiche le spinner
+  await interaction.deferReply();
 
-    // Commande à exécuter
-    const command = `${scriptPath} "${keyword}"`;
+  try {
+    const { stdout, stderr } = await exec(command);
 
-    // Réponse initiale pour montrer que le bot bosse
-    await interaction.deferReply();
+    if (stderr) console.warn(`stderr: ${stderr}`);
 
-    // Exécution du script
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Erreur d'exécution : ${error.message}`);
-        interaction.editReply("Une erreur est survenue lors de l'exécution du script.");
-        return;
-      }
-
-      if (stderr) {
-        console.warn(`stderr : ${stderr}`);
-      }
-    });
+    // Envoie la sortie du script et stoppe le spinner
+    await interaction.editReply(
+      stdout.length > 0 ? stdout : "Aucun résultat retourné."
+    );
+  } catch (err) {
+    console.error("Erreur d'exécution :", err);
+    await interaction.editReply("Une erreur est survenue lors de l'exécution du script.");
   }
 });
 
@@ -110,98 +119,90 @@ client.on("messageCreate", async message => {
   let newMessage = message.content;
   let modified = false;
 
+  // Remplacement de "gé"
   if (newMessage.toLowerCase().includes("gé")) {
-    console.log("G detected");
     newMessage = newMessage
-      .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1-G-")
+      .replaceAll(
+        /([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi,
+        "$1-G-"
+      )
       .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
-      .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1G")
+      .replaceAll(
+        /(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi,
+        "$1G"
+      )
       .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé/gi, "-G");
-    console.log("G modified");
     geReplacementCount++;
-    console.log(`Compteur de remplacement de "gé" : ${geReplacementCount}`);
     modified = true;
   }
 
+  // Réaction myrtille
   if (/myrtille|myrtilles/i.test(newMessage)) {
     try {
       await message.react("🫐");
-      console.log("Blue berry added");
       myrtilleReactionCount++;
-      console.log(`Compteur de réactions "myrtille" : ${myrtilleReactionCount}`);
-    } catch (error) {
-      console.error("Erreur lors de l'ajout de la réaction :", error);
-    }
+    } catch {}
   }
 
+  // Réaction sanglier
   if (newMessage.toLowerCase().includes("sanglier")) {
     try {
       await message.react("🐗");
-      console.log("Sanglier added");
       sanglierReactionCount++;
-      console.log(`Compteur de réactions "sanglier" : ${sanglierReactionCount}`);
-    } catch (error) {
-      console.error("Erreur lors de l'ajout de la réaction :", error);
-    }
+    } catch {}
   }
 
-  if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr") && message.author.id === TARGET_USER_ID) {
+  // Message de fin pour l'utilisateur ciblé
+  if (
+    newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr") &&
+    message.author.id === TARGET_USER_ID
+  ) {
     try {
       await message.channel.send(messageFin);
-      console.log("Chasse terminée");
-    } catch (error) {
-      console.error("Erreur lors de l'envoi du message final :", error);
-    }
+    } catch {}
   }
 
+  // Lien quantique
   if (newMessage.toLowerCase().includes("quantique")) {
-    newMessage = newMessage.replace(/quantique/gi,
+    newMessage = newMessage.replace(
+      /quantique/gi,
       "[quan-tic tac](<https://www.youtube.com/watch?v=fmvqz0_KFX0>)"
     );
     quantiqueCount++;
-    console.log(`Compteur de Quantique : ${quantiqueCount}`);
     modified = true;
   }
 
+  // "quoi" → "feur"
   const words = newMessage.split(/\s+/);
   const lastWord = words[words.length - 1].toLowerCase();
-
-  if (["quoi", "quoi?", "quoi ?", "quoi "].includes(lastWord)) {
+  if (["quoi", "quoi?", "quoi ?", "quoi "].includes(lastWord)) {
     try {
       await message.channel.send("feur");
       quoiCount++;
-      console.log(`Compteur de "quoi" : ${quoiCount}`);
-    } catch (error) {
-      console.error("Erreur lors de l'envoi de 'feur' :", error);
-    }
+    } catch {}
   }
 
+  // "non" → "bril"
   if (["non", "non.", "non "].includes(lastWord)) {
     try {
       await message.channel.send("bril");
       nonCount++;
-      console.log(`Compteur de "non" : ${nonCount}`);
-    } catch (error) {
-      console.error("Erreur lors de l'envoi de 'bril' :", error);
-    }
+    } catch {}
   }
 
+  // Si on a modifié le message, on l'envoie et le supprime au bout de 30s
   if (modified) {
     try {
       const sentMessage = await message.channel.send(newMessage);
       setTimeout(() => {
-        sentMessage.delete().catch(err => console.error("Erreur suppression :", err));
-      }, 30000);
-    } catch (err) {
-      console.error("Erreur lors de l'envoi du message modifié :", err);
-    }
+        sentMessage.delete().catch(() => {});
+      }, 30_000);
+    } catch {}
   }
 });
 
-// Connexion au bot
+// Connexion au bot + serveur HTTP
 client.login(TOKEN);
-
-// Écouter sur un port spécifique
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

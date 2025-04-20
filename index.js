@@ -1,26 +1,16 @@
-const { 
-  Client, 
-  GatewayIntentBits, 
-  REST, 
-  Routes, 
-  SlashCommandBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ComponentType,
-  MessageFlags
-} = require("discord.js");
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require("discord.js");
 const express = require("express");
 const fs = require("fs");
+const { exec } = require("child_process");
 const path = require("path");
 
 const app = express();
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
 });
 
 // Utilisez la variable d'environnement pour le token
@@ -38,279 +28,176 @@ let quoiCount = 0;
 let nonCount = 0;
 let quantiqueCount = 0;
 
-const messageFin = `# GMilgram - C'est la fin !
+const messageFin = # GMilgram - C'est la fin !
 Ça y est ! Tu as terminé toutes les énigmes de la communauté !
 Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).
-||@everyone||`;
+||@everyone||;
 
-// --- Fonctions de recherche (portage du code Python) ---
+client.once("ready", () => {
+    console.log("Le bot est prêt !");
+    console.log(Connecté en tant que ${client.user.tag});
+    client.user.setStatus('online');
+    client.user.setActivity('En ligne !', { type: 'PLAYING' });
+});
 
-/**
- * Extrait l'ID YouTube entre crochets, ex: [X0T52QoB-1Q]
- */
-function extraireIdYoutube(nomFichier) {
-  const match = nomFichier.match(/\[([A-Za-z0-9_-]{11})\]/);
-  return match ? match[1] : null;
-}
-
-/**
- * Convertit les millisecondes en format hh:mm:ss
- */
-function msToHms(ms) {
-  const secondes = Math.floor(ms / 1000);
-  const h = Math.floor(secondes / 3600);
-  const m = Math.floor((secondes % 3600) / 60);
-  const s = secondes % 60;
-  return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-}
-
-/**
- * Cherche un mot dans tous les fichiers .tsv du dossier donné.
- * Renvoie un tableau de chaînes formatées pour Discord.
- */
-function chercherDansFichiers(mot, dossierPath) {
-  mot = mot.toLowerCase();
-  const resultats = [];
-  let fichiers;
-  try {
-    fichiers = fs.readdirSync(dossierPath);
-  } catch (err) {
-    console.error(`Impossible de lire ${dossierPath}:`, err);
-    return [];
-  }
-
-  for (const nomFichier of fichiers) {
-    if (!nomFichier.toLowerCase().endsWith('.tsv')) continue;
-    const fullPath = path.join(dossierPath, nomFichier);
-    let contenu;
-    try {
-      contenu = fs.readFileSync(fullPath, 'utf-8');
-    } catch (err) {
-      console.error(`Erreur lecture de ${nomFichier}`, err);
-      continue;
-    }
-
-    for (const ligne of contenu.split(/\r?\n/)) {
-      if (!ligne.toLowerCase().includes(mot)) continue;
-      const parties = ligne.split('\t');
-      if (parties.length < 3) continue;
-
-      const startMs = parseInt(parties[0], 10);
-      const endMs   = parseInt(parties[1], 10);
-      const texte   = parties.slice(2).join('\t');
-
-      const idYoutube = extraireIdYoutube(nomFichier);
-      if (idYoutube) {
-        const lien     = `https://www.youtube.com/watch?v=${idYoutube}&t=${Math.floor(startMs/1000)}s`;
-        const titre    = nomFichier.replace(`[${idYoutube}]`, '').replace('.tsv','').trim();
-        const timecode = `${msToHms(startMs)} → ${msToHms(endMs)}`;
-        resultats.push(`- [${titre}](${lien}) (${timecode}) : ${texte}`);
-      } else {
-        resultats.push(`- ${nomFichier} (${startMs}–${endMs}) : ${texte}`);
-      }
-    }
-  }
-
-  return resultats;
-}
-
-// --- Slash command /search ---
+// === Slash command /search ===
 
 const searchCommand = new SlashCommandBuilder()
-  .setName("search")
-  .setDescription("Cherche un mot dans les fichiers .tsv")
-  .addStringOption(opt => opt
-    .setName("mot")
-    .setDescription("Le mot à chercher")
-    .setRequired(true))
-  .toJSON();
+    .setName("search")
+    .setDescription("Cherche un mot dans les fichiers .tsv")
+    .addStringOption(option =>
+        option.setName("mot")
+            .setDescription("Le mot à chercher")
+            .setRequired(true)
+    )
+    .setDefaultPermission(true)  // Assure-toi que la permission par défaut est true
+    .toJSON();
 
 async function registerCommands() {
-  const rest = new REST({ version: "10" }).setToken(TOKEN);
-  try {
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: [searchCommand] }
-    );
-    console.log("Commandes slash enregistrées.");
-  } catch (err) {
-    console.error("Erreur enregistrement slash:", err);
-  }
+    const rest = new REST({ version: "10" }).setToken(TOKEN);
+    try {
+        console.log("Enregistrement des commandes slash...");
+        await rest.put(
+            Routes.applicationCommands(process.env.CLIENT_ID), // Remplace applicationGuildCommands par applicationCommands
+            { body: [searchCommand] }
+        );
+        console.log("Commandes slash enregistrées.");
+    } catch (error) {
+        console.error("Erreur lors de l'enregistrement :", error);
+    }
 }
 registerCommands();
 
-client.once("ready", () => {
-  console.log(`Connecté en tant que ${client.user.tag}`);
-  client.user.setStatus('online');
-  client.user.setActivity("Recherche TSV", { type: "PLAYING" });
-});
-
+// === Gestion des slash commands ===
 client.on("interactionCreate", async interaction => {
-  if (!interaction.isChatInputCommand() || interaction.commandName !== "search") return;
+    if (!interaction.isChatInputCommand()) return;
 
-  const keyword = interaction.options.getString("mot");
-  const dataDir = path.join(__dirname, "data");
+    if (interaction.commandName === "search") {
+        const keyword = interaction.options.getString("mot");
 
-  // On supprime les miniatures YouTube
-  await interaction.deferReply({ flags: MessageFlags.SuppressEmbeds });
+        // Chemin absolu vers ton script
+        const scriptPath = path.join(__dirname, "g1000mots.sh");
 
-  const resultats = chercherDansFichiers(keyword, dataDir);
-  if (resultats.length === 0) {
-    return interaction.editReply({
-      content: `Aucun résultat pour « ${keyword} ».`,
-      flags: MessageFlags.SuppressEmbeds
-    });
-  }
+        // Commande à exécuter
+        const command = ${scriptPath} "${keyword}";
 
-  // Pagination (15 résultats par page)
-  const pageSize = 15;
-  const pages = [];
-  for (let i = 0; i < resultats.length; i += pageSize) {
-    pages.push(resultats.slice(i, i + pageSize).join("\n"));
-  }
-  let currentPage = 0;
+        // Réponse initiale pour montrer que le bot bosse
+        await interaction.deferReply();
 
-  const buildRow = () => new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId("prev")
-        .setLabel("◀ Précédent")
-        .setStyle(ButtonStyle.Secondary)
-        .setDisabled(currentPage === 0),
-      new ButtonBuilder()
-        .setCustomId("next")
-        .setLabel("Suivant ▶")
-        .setStyle(ButtonStyle.Secondary)
-        .setDisabled(currentPage === pages.length - 1)
-    );
+        // Exécution du script
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(Erreur d'exécution: ${error.message});
+                interaction.editReply("Une erreur est survenue lors de l'exécution du script.");
+                return;
+            }
 
-  const reply = await interaction.editReply({
-    content: `**Résultats pour « ${keyword} » (page ${currentPage+1}/${pages.length}) :**\n${pages[currentPage]}`,
-    components: pages.length > 1 ? [ buildRow() ] : [],
-    flags: MessageFlags.SuppressEmbeds
-  });
-
-  if (pages.length <= 1) return;
-
-  const collector = reply.createMessageComponentCollector({
-    componentType: ComponentType.Button,
-    time: 5 * 60 * 1000, // 5 minutes
-  });
-
-  collector.on("collect", async i => {
-    if (i.user.id !== interaction.user.id) {
-      return i.reply({ content: "Seul·e l'auteur·rice de la recherche peut naviguer.", ephemeral: true });
+            if (stderr) {
+                console.warn(stderr: ${stderr});
+            }
+        });
     }
-    await i.deferUpdate();
-
-    if (i.customId === "prev" && currentPage > 0) {
-      currentPage--;
-    } else if (i.customId === "next" && currentPage < pages.length - 1) {
-      currentPage++;
-    }
-
-    await interaction.editReply({
-      content: `**Résultats pour « ${keyword} » (page ${currentPage+1}/${pages.length}) :**\n${pages[currentPage]}`,
-      components: [ buildRow() ],
-      flags: MessageFlags.SuppressEmbeds
-    });
-  });
-
-  collector.on("end", async () => {
-    // désactive les boutons quand le temps est écoulé
-    const disabledRow = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder().setCustomId("prev").setLabel("◀ Précédent").setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId("next").setLabel("Suivant ▶").setStyle(ButtonStyle.Secondary).setDisabled(true)
-      );
-    await interaction.editReply({ components: [ disabledRow ] });
-  });
 });
 
 // === Gestion des messages textuels ===
-
 client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
-  if (!allowedChannels.includes(message.channel.id)) return;
+    if (message.author.bot) return;
+    if (!allowedChannels.includes(message.channel.id)) return;
 
-  let newMessage = message.content;
-  let modified = false;
+    let newMessage = message.content;
+    let modified = false;
 
-  // Remplacement de "gé"
-  if (newMessage.toLowerCase().includes("gé")) {
-    newMessage = newMessage
-      .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1-G-")
-      .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
-      .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1G")
-      .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé/gi, "-G");
-    geReplacementCount++;
-    modified = true;
-  }
+    if (newMessage.toLowerCase().includes("gé")) {
+        console.log("G detected");
+        newMessage = newMessage
+            .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"]|$)/gi, "$1-G-")
+            .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"]|$)/gi, "G-")
+            .replaceAll(/(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"]|$)/gi, "$1G")
+            .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_~()'"])gé/gi, "-G");
+        console.log("G modified");
+        geReplacementCount++;
+        console.log(Compteur de remplacement de "gé" : ${geReplacementCount});
+        modified = true;
+    }
 
-  // Réaction myrtille
-  if (/myrtille|myrtilles/i.test(newMessage)) {
-    try {
-      await message.react("🫐");
-      myrtilleReactionCount++;
-    } catch {}
-  }
+    if (/myrtille|myrtilles/i.test(newMessage)) {
+        try {
+            await message.react("🫐");
+            console.log("Blue berry added");
+            myrtilleReactionCount++;
+            console.log(Compteur de réactions "myrtille" : ${myrtilleReactionCount});
+        } catch (error) {
+            console.error("Erreur lors de l'ajout de la réaction :", error);
+        }
+    }
 
-  // Réaction sanglier
-  if (newMessage.toLowerCase().includes("sanglier")) {
-    try {
-      await message.react("🐗");
-      sanglierReactionCount++;
-    } catch {}
-  }
+    if (newMessage.toLowerCase().includes("sanglier")) {
+        try {
+            await message.react("🐗");
+            console.log("Sanglier added");
+            sanglierReactionCount++;
+            console.log(Compteur de réactions "sanglier" : ${sanglierReactionCount});
+        } catch (error) {
+            console.error("Erreur lors de l'ajout de la réaction :", error);
+        }
+    }
 
-  // Message de fin pour l'utilisateur cible
-  if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr") && message.author.id === TARGET_USER_ID) {
-    try {
-      await message.channel.send(messageFin);
-    } catch {}
-  }
+    if (newMessage.toLowerCase().includes("oui oui bien sûr bien sûûûr") && message.author.id === TARGET_USER_ID) {
+        try {
+            await message.channel.send(messageFin);
+            console.log("Chasse terminée");
+        } catch (error) {
+            console.error("Erreur lors de l'envoi du message final :", error);
+        }
+    }
 
-  // Lien quantique
-  if (newMessage.toLowerCase().includes("quantique")) {
-    newMessage = newMessage.replace(/quantique/gi,
-      "[quan-tic tac](<https://www.youtube.com/watch?v=fmvqz0_KFX0>)"
-    );
-    quantiqueCount++;
-    modified = true;
-  }
+    if (newMessage.toLowerCase().includes("quantique")) {
+        newMessage = newMessage.replace(/quantique/gi, "[quan-tic tac](<https://www.youtube.com/watch?v=fmvqz0_KFX0>)");
+        quantiqueCount++;
+        console.log(Compteur de Quantique : ${quantiqueCount});
+        modified = true;
+    }
 
-  // "quoi" -> "feur"
-  const words = newMessage.split(/\s+/);
-  const lastWord = words[words.length - 1].toLowerCase();
-  if (["quoi", "quoi?", "quoi ", "quoi ?"].includes(lastWord)) {
-    try {
-      await message.channel.send("feur");
-      quoiCount++;
-    } catch {}
-  }
+    const words = newMessage.split(/\s+/);
+    const lastWord = words[words.length - 1].toLowerCase();
 
-  // "non" -> "bril"
-  if (["non", "non.", "non "].includes(lastWord)) {
-    try {
-      await message.channel.send("bril");
-      nonCount++;
-    } catch {}
-  }
+    if (["quoi", "quoi?", "quoi ", "quoi ?"].includes(lastWord)) {
+        try {
+            await message.channel.send("feur");
+            quoiCount++;
+            console.log(Compteur de "quoi" : ${quoiCount});
+        } catch (error) {
+            console.error("Erreur lors de l'envoi de 'feur' :", error);
+        }
+    }
 
-  // Envoi du message modifié puis suppression
-  if (modified) {
-    try {
-      const sent = await message.channel.send(newMessage);
-      setTimeout(() => {
-        sent.delete().catch(() => {});
-      }, 30_000);
-    } catch {}
-  }
+    if (["non", "non.", "non "].includes(lastWord)) {
+        try {
+            await message.channel.send("bril");
+            nonCount++;
+            console.log(Compteur de "non" : ${nonCount});
+        } catch (error) {
+            console.error("Erreur lors de l'envoi de 'bril' :", error);
+        }
+    }
+
+    if (modified) {
+        try {
+            const sentMessage = await message.channel.send(newMessage);
+            setTimeout(() => {
+                sentMessage.delete().catch(err => console.error("Erreur suppression :", err));
+            }, 30000);
+        } catch (err) {
+            console.error("Erreur lors de l'envoi du message modifié :", err);
+        }
+    }
 });
 
-// Connexion et serveur HTTP
+// Connexion au bot
 client.login(TOKEN);
+
+// Écouter sur un port spécifique
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server démarré sur le port ${PORT}`);
+    console.log(Server is running on port ${PORT});
 });

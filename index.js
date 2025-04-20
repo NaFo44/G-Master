@@ -71,16 +71,33 @@ async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   try {
     console.log("Enregistrement des commandes slash...");
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: [searchCommand] }
-    );
-    console.log("Commandes slash enregistrées.");
+
+    if (process.env.GUILD_ID) {
+      // En développement : on déploie sur la guilde de test uniquement
+      await rest.put(
+        Routes.applicationGuildCommands(
+          process.env.CLIENT_ID,
+          process.env.GUILD_ID
+        ),
+        { body: [searchCommand] }
+      );
+      console.log("Commande /search enregistrée en scope guilde.");
+    } else {
+      // En production : on déploie globalement
+      await rest.put(
+        Routes.applicationCommands(process.env.CLIENT_ID),
+        { body: [searchCommand] }
+      );
+      console.log("Commande /search enregistrée en scope global.");
+    }
+
   } catch (error) {
-    console.error("Erreur lors de l'enregistrement :", error);
+    console.error("Erreur lors de l'enregistrement des slash‑commands :", error);
   }
 }
+
 registerCommands();
+
 
 // === Gestion des slash commands ===
 

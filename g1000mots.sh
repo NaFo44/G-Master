@@ -105,9 +105,9 @@ split_text_into_chunks() {
     done
 }
 
+entire_text=''
 main() {
     search="$(backticks_remover "${1}")"
-    entire_text=''
 
     if ! "${DISCORD_ENABLE}"; then
         printf -- 'Debug variables:\n'
@@ -199,7 +199,7 @@ main() {
         entire_text="${entire_text}\n$(printf -- '### Trop de résultats pour afficher le détail des occurences\n')"
     fi
     entire_text="${entire_text}\n$(show_footer)"
-    split_text_into_chunks "${entire_text}"
 }
 
 main "${*}"
+split_text_into_chunks "${entire_text}"

@@ -160,9 +160,9 @@ main() {
         if [ "${last_video}" != "${video_id}" ]; then
             if [ "${total_occurences_nb}" -gt "${MAX_MATCHES}" ]; then
                 if [ "${occurences_per_video}" -eq '1' ]; then
-                    entire_text="${entire_text} <${occurences_per_video} occurence>"
+                    entire_text="${entire_text} *<${occurences_per_video} occurence>*"
                 elif [ "${occurences_per_video}" -ge '2' ]; then
-                    entire_text="${entire_text} <${occurences_per_video} occurences>"
+                    entire_text="${entire_text} *<${occurences_per_video} occurences>*"
                 fi
                 occurences_per_video='1'
             fi

@@ -76,7 +76,7 @@ send_message_to_discord() {
 split_text_into_chunks() {
     local all_text="$1"
     local IFS=$'\n'
-    mapfile -t -- 'lines_array' < <(printf -- "${all_text}")
+    mapfile -t -- 'lines_array' < <(echo -e -- "${all_text}")
     local chunks=()
     local current_chunk=()
     local current_length='0'
@@ -129,7 +129,7 @@ main() {
 
 
     if [ "${#search}" -lt "${SEARCH_MIN_CHARS}" ]; then
-        entire_text='## Pas assez de caractères pour lancer une recherche, merci d'"'"'en taper au moins '"${SEARCH_MIN_CHARS}"
+        entire_text='## Pas assez de caractères pour lancer une recherche, merci d'"'"'en taper au minimum '"${SEARCH_MIN_CHARS}"
         return '1'
     elif [ "${#search}" -gt "${SEARCH_MAX_CHARS}" ]; then
         entire_text='## Trop de caractères pour lancer une recherche, merci d'"'"'en taper au maximum '"${SEARCH_MAX_CHARS}"

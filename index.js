@@ -10,10 +10,10 @@ const fs = require("fs");
 const path = require("path");
 const { exec: _exec } = require("child_process");
 const { promisify } = require("util");
-const { execFile } = require('child_process');
+const { execFile } = require("child_process");
 const exec = promisify(_exec);
-const app = express();
 
+const app = express();
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -54,7 +54,6 @@ client.once("ready", () => {
 });
 
 // === Slash command /search ===
-
 const searchCommand = new SlashCommandBuilder()
   .setName("search")
   .setDescription("Cherche un mot dans les fichiers .tsv")
@@ -92,29 +91,29 @@ async function registerCommands() {
     }
 
   } catch (error) {
-    console.error("Erreur lors de l'enregistrement des slash‑commands :", error);
+    console.error("Erreur lors de l'enregistrement des slash-commands :", error);
   }
 }
 
 registerCommands();
 
-
 // === Gestion des slash commands ===
-
 client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand() || interaction.commandName !== "search")
     return;
 
-  const mot = interaction.options.getString("mot");
-  const scriptPath = path.join(__dirname, "g1000mots.sh");
+  // On récupère la valeur brute de l'option, espaces inclus
+  const motOption = interaction.options.get("mot");
+  const mot = typeof motOption?.value === "string" ? motOption.value : "";
 
+  const scriptPath = path.join(__dirname, "g1000mots.sh");
   // Lancement sécurisé du script sans injection possible
   execFile(scriptPath, [ mot ], (err, stdout, stderr) => {
     // on ne logue rien, on ne répond à personne ici
   });
 });
-// === Gestion des messages textuels ===
 
+// === Gestion des messages textuels ===
 client.on("messageCreate", async message => {
   if (message.author.bot) return;
   if (!allowedChannels.includes(message.channel.id)) return;
@@ -178,7 +177,7 @@ client.on("messageCreate", async message => {
   // "quoi" → "feur"
   const words = newMessage.split(/\s+/);
   const lastWord = words[words.length - 1].toLowerCase();
-  if (["quoi", "quoi?", "quoi ?", "quoi "].includes(lastWord)) {
+  if (["quoi", "quoi?", "quoi ?", "quoi "].includes(lastWord)) {
     try {
       await message.channel.send("feur");
       quoiCount++;
@@ -186,7 +185,7 @@ client.on("messageCreate", async message => {
   }
 
   // "non" → "bril"
-  if (["non", "non.", "non "].includes(lastWord)) {
+  if (["non", "non.", "non "].includes(lastWord)) {
     try {
       await message.channel.send("bril");
       nonCount++;

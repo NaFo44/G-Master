@@ -17,6 +17,7 @@ MAX_MATCHES="${MAX_MATCHES:-100}"
 DISCORD_MAX_MESSAGE_SIZE="${DISCORD_MAX_MESSAGE_SIZE:-1900}"
 DISCORD_SENDING_COOLDOWN="${DISCORD_SENDING_COOLDOWN:-0.5}"
 LOG_FILE="${LOG_FILE:-/dev/null}"
+TSV_EXTENSION="${TSV_EXTENSION:-.tsv}"
 
 if [ -z "${TSV_DIR}" ]; then
     printf -- 'TSV_DIR environment variable is not defined, aborting\n'
@@ -27,14 +28,18 @@ else
         printf -- 'Directory "%s" does not exist, aborting\n' "${TSV_DIR}"
         exit '3'
     fi
+    if [ "$(find "${TSV_DIR}" -type 'f' -name '*'"${TSV_EXTENSION}" | wc -l --)" -eq '0' ]; then
+        printf -- 'Directory "%s" does not contain any "%s" file, aborting\n' "${TSV_DIR}" "${TSV_EXTENSION}"
+        exit '4'
+    fi
 fi
 if "${DISCORD_ENABLE}"; then
     if [ -z "${DISCORD_TOKEN}" ]; then
         printf -- 'DISCORD_TOKEN environment variable is not defined, aborting\n'
-        exit '4'
+        exit '5'
     elif [ -z "${DISCORD_CHANNEL_ID}" ]; then
         printf -- 'DISCORD_CHANNEL_ID environment variable is not defined, aborting\n'
-        exit '5'
+        exit '6'
     fi
 fi
 
@@ -122,6 +127,7 @@ main() {
         printf -- '  DISCORD_MAX_MESSAGE_SIZE\t= "%s"\n' "${DISCORD_MAX_MESSAGE_SIZE}"
         printf -- '  DISCORD_SENDING_COOLDOWN\t= "%s"\n' "${DISCORD_SENDING_COOLDOWN}"
         printf -- '  LOG_FILE\t\t\t= "%s"\n' "${LOG_FILE}"
+        printf -- '  TSV_EXTENSION\t\t\t= "%s"\n' "${TSV_EXTENSION}"
         printf -- '  -----\n'
         printf -- '  search\t\t\t= "%s"\n' "${search}"
         printf -- '\n\n'
@@ -136,7 +142,7 @@ main() {
         return '1'
     fi
 
-    all_lines="$(grep -FHir -- "${search}" "${TSV_DIR}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' -- | sed -- 's/^$//')"
+    all_lines="$(grep -FHi -- "${search}" "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' -- | sed -- 's/^$//')"
     total_occurences_nb="$(wc -l <<< "${all_lines}")"
     
     if [ -z "${all_lines}" ]; then # "wc -l" returns 1 even if "${all_lines}" is empty (instead of 0)
@@ -152,7 +158,7 @@ main() {
     last_video=''
     occurences_per_video='0'
     while IFS= read -r -- 'line'; do
-        line_without_number="$(awk -F '.tsv:' -- '{print $1}' <<< "${line}" | cut -c '6-' --)"
+        line_without_number="$(awk -F "${TSV_EXTENSION}"':' -- '{print $1}' <<< "${line}" | cut -c '6-' --)"
         video_id="${line_without_number: -11}"
         video_name="$(keep_alnum_only "$(basename "${line_without_number}" '.'"${video_id}")")"
         video_url='https://www.youtube.com/watch?v='"${video_id}"
@@ -173,7 +179,7 @@ main() {
         fi
 
         if [ "${total_occurences_nb}" -le "${MAX_MATCHES}" ]; then
-            timestamps_and_text="$(awk -F '.tsv:' -- '{print $2}' <<< "${line}")"
+            timestamps_and_text="$(awk -F "${TSV_EXTENSION}"':' -- '{print $2}' <<< "${line}")"
             timestamp_start="$(("$(awk -F '\t' -- '{print $1}' <<< "${timestamps_and_text}")"/1000))"
             #timestamp_end="$(awk -F '\t' -- '{print $2}' <<< "${timestamps_and_text}" | sed -- 's/...$//')" # Pas d'utilité pour le moment... mais vu que ça dérange pas, ça peut rester ici si besoin un jour !
             ts_to_h="$(printf -- '%02d' "$((timestamp_start/3600))")"

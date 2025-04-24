@@ -15,7 +15,8 @@ SEARCH_MIN_CHARS="${SEARCH_MIN_CHARS:-4}"
 SEARCH_MAX_CHARS="${SEARCH_MAX_CHARS:-100}"
 MAX_MATCHES="${MAX_MATCHES:-100}"
 DISCORD_MAX_MESSAGE_SIZE="${DISCORD_MAX_MESSAGE_SIZE:-1900}"
-DISCORD_SENDING_COOLDOWN="${DISCORD_SENDING_COOLDOWN:-0.5}"
+DISCORD_SENDING_COOLDOWN="${DISCORD_SENDING_COOLDOWN:-0.25}"
+DISCORD_MAX_MESSAGE_SENDING_RETRIES="${DISCORD_MAX_MESSAGE_SENDING_RETRIES:-2}"
 LOG_FILE="${LOG_FILE:-/dev/null}"
 TSV_EXTENSION="${TSV_EXTENSION:-.tsv}"
 
@@ -52,7 +53,7 @@ keep_alnum_only() {
 }
 
 show_footer() {
-    printf -- '-# *\*cette recherche étant effectuée sur des transcriptions réalisées avec [Whisper](<https://github.com/openai/whisper>), les résultats sont susceptibles de contenir des erreurs !*\n'
+    printf -- '-# *\*cette recherche étant effectuée sur des transcriptions réalisées avec [Whisper](<https://github.com/openai/whisper>), les résultats sont susceptibles de contenir des erreurs !*'
 }
 
 send_message_to_discord() {
@@ -79,80 +80,93 @@ send_message_to_discord() {
 
 ### ATTENTION : FONCTION "split_text_into_chunks" GÉNÉRÉE PARTIELLEMENT PAR MISTRAL AI
 split_text_into_chunks() {
-    local all_text="$1"
+    local all_text=("${@}")
     local IFS=$'\n'
-    mapfile -t -- 'lines_array' < <(echo -e -- "${all_text}")
     local chunks=()
     local current_chunk=()
     local current_length='0'
 
-    for line in "${lines_array[@]}"; do
-        if [ "$((current_length+${#line}+1))" -gt "${DISCORD_MAX_MESSAGE_SIZE}" ]; then
-            chunks+=("$(printf -- '%s\n' "${current_chunk[*]}")")
+    for line in "${all_text[@]}"; do
+        if [ "$((current_length+"${#line}"+11+1))" -gt "${DISCORD_MAX_MESSAGE_SIZE}" ]; then
+            chunks+=("${current_chunk[*]}")
             current_chunk=()
             current_length='0'
         fi
 
         current_chunk+=("${line}")
-        ((current_length += ${#line} + 1))  # +1 for the newline character
+        ((current_length+="${#line}"+11+1))  # +1 for the newline character // +11 for the "[x/x]" part
     done
 
      if [ ${#current_chunk[@]} -ne '0' ]; then
-        chunks+=("$(printf -- '%s\n' "${current_chunk[*]}")")
+        chunks+=("${current_chunk[*]}")
     fi
 
     local total_chunks="${#chunks[@]}"
     local chunk_index='1'
 
     for chunk in "${chunks[@]}"; do
-        send_message_to_discord "$(printf -- '%s\n-# [%d/%d]' "${chunk}" "${chunk_index}" "${total_chunks}")"
+        if "${DISCORD_ENABLE}"; then
+            for((retry_count=0;retry_count<"$((DISCORD_MAX_MESSAGE_SENDING_RETRIES+1))";retry_count++)); do # +1 for the initial attempt
+                curl_discord_answer="$(send_message_to_discord "$(printf -- '%s\n-# [%d/%d]' "${chunk}" "${chunk_index}" "${total_chunks}")")"
+                retry_time="$(jq '.retry_after // empty' <<< "${curl_discord_answer}")"
+                if [ "${retry_time}" == '' ]; then
+                    break -- '1'
+                else
+                    sleep -- "${retry_time}"
+                fi
+            done
+        else
+            send_message_to_discord "$(printf -- '%s\n-# [%d/%d]' "${chunk}" "${chunk_index}" "${total_chunks}")"
+        fi
         ((chunk_index++))
     done
 }
 
-entire_text=''
+entire_text=()
 main() {
     search="$(backticks_remover "${1}")"
 
     if ! "${DISCORD_ENABLE}"; then
         printf -- 'Debug variables:\n'
-        printf -- '  TSV_DIR\t\t\t= "%s"\n' "${TSV_DIR}"
-        printf -- '  DISCORD_ENABLE\t\t= "%s"\n' "${DISCORD_ENABLE}"
-        printf -- '  DISCORD_CHANNEL_ID\t\t= "%s"\n' "${DISCORD_CHANNEL_ID}"
-        printf -- '  DISCORD_TOKEN\t\t\t= "%s"\n' "${DISCORD_TOKEN}"
+        printf -- '  TSV_DIR\t\t\t\t= "%s"\n' "${TSV_DIR}"
+        printf -- '  DISCORD_ENABLE\t\t\t= "%s"\n' "${DISCORD_ENABLE}"
+        printf -- '  DISCORD_CHANNEL_ID\t\t\t= "%s"\n' "${DISCORD_CHANNEL_ID}"
+        printf -- '  DISCORD_TOKEN\t\t\t\t= "%s"\n' "${DISCORD_TOKEN}"
         printf -- '  -----\n'
-        printf -- '  SEARCH_MIN_CHARS\t\t= "%s"\n' "${SEARCH_MIN_CHARS}"
-        printf -- '  SEARCH_MAX_CHARS\t\t= "%s"\n' "${SEARCH_MAX_CHARS}"
-        printf -- '  MAX_MATCHES\t\t\t= "%s"\n' "${MAX_MATCHES}"
-        printf -- '  DISCORD_MAX_MESSAGE_SIZE\t= "%s"\n' "${DISCORD_MAX_MESSAGE_SIZE}"
-        printf -- '  DISCORD_SENDING_COOLDOWN\t= "%s"\n' "${DISCORD_SENDING_COOLDOWN}"
-        printf -- '  LOG_FILE\t\t\t= "%s"\n' "${LOG_FILE}"
-        printf -- '  TSV_EXTENSION\t\t\t= "%s"\n' "${TSV_EXTENSION}"
+        printf -- '  SEARCH_MIN_CHARS\t\t\t= "%s"\n' "${SEARCH_MIN_CHARS}"
+        printf -- '  SEARCH_MAX_CHARS\t\t\t= "%s"\n' "${SEARCH_MAX_CHARS}"
+        printf -- '  MAX_MATCHES\t\t\t\t= "%s"\n' "${MAX_MATCHES}"
+        printf -- '  DISCORD_MAX_MESSAGE_SIZE\t\t= "%s"\n' "${DISCORD_MAX_MESSAGE_SIZE}"
+        printf -- '  DISCORD_SENDING_COOLDOWN\t\t= "%s"\n' "${DISCORD_SENDING_COOLDOWN}"
+        printf -- '  DISCORD_MAX_MESSAGE_SENDING_RETRIES\t= "%s"\n' "${DISCORD_MAX_MESSAGE_SENDING_RETRIES}"
+        printf -- '  LOG_FILE\t\t\t\t= "%s"\n' "${LOG_FILE}"
+        printf -- '  TSV_EXTENSION\t\t\t\t= "%s"\n' "${TSV_EXTENSION}"
         printf -- '  -----\n'
-        printf -- '  search\t\t\t= "%s"\n' "${search}"
+        printf -- '  search\t\t\t\t= "%s"\n' "${search}"
+        printf -- '  search (# of chars)\t\t\t= "%s"\n' "${#search}"
         printf -- '\n\n'
     fi
 
 
     if [ "${#search}" -lt "${SEARCH_MIN_CHARS}" ]; then
-        entire_text='## Pas assez de caractères pour lancer une recherche, merci d'"'"'en taper au minimum '"${SEARCH_MIN_CHARS}"
+        entire_text+=('## Pas assez de caractères pour lancer une recherche, merci d'"'"'en taper au minimum '"${SEARCH_MIN_CHARS}")
         return '1'
     elif [ "${#search}" -gt "${SEARCH_MAX_CHARS}" ]; then
-        entire_text='## Trop de caractères pour lancer une recherche, merci d'"'"'en taper au maximum '"${SEARCH_MAX_CHARS}"
+        entire_text+=('## Trop de caractères pour lancer une recherche, merci d'"'"'en taper au maximum '"${SEARCH_MAX_CHARS}")
         return '1'
     fi
 
-    all_lines="$(grep -FHi -- "${search}" "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' -- | sed -- 's/^$//')"
-    total_occurences_nb="$(wc -l <<< "${all_lines}")"
+    all_grepped_lines="$(grep -FHi -- "${search}" "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' -- | sed -- 's/^$//')"
+    total_occurences_nb="$(wc -l <<< "${all_grepped_lines}")"
     
-    if [ -z "${all_lines}" ]; then # "wc -l" returns 1 even if "${all_lines}" is empty (instead of 0)
-        entire_text="$(printf -- '## Le terme `%s` semble\* n'"'"'avoir jamais été prononcé dans une vidéo de G\n' "${search}")"
-        entire_text="${entire_text}\n$(show_footer)"
+    if [ -z "${all_grepped_lines}" ]; then # "wc -l" returns 1 even if "${all_grepped_lines}" is empty (instead of 0)
+        entire_text+=('## Le terme `'"${search}"'` semble\* n'"'"'avoir jamais été prononcé dans une vidéo de G')
+        entire_text+=("$(show_footer)")
         return '1'
     elif [ "${total_occurences_nb}" -eq '1' ]; then
-        entire_text="$(printf -- '## Le terme `%s` semble\* avoir été prononcé %s fois dans la vidéo suivante :\n' "${search}" "${total_occurences_nb}")"
+        entire_text+=('## Le terme `'"${search}"'` semble\* avoir été prononcé '"${total_occurences_nb}"' fois dans la vidéo suivante :')
     else
-        entire_text="$(printf -- '## Le terme `%s` semble\* avoir été prononcé %s fois au total dans les vidéos suivantes :\n' "${search}" "${total_occurences_nb}")"
+        entire_text+=('## Le terme `'"${search}"'` semble\* avoir été prononcé '"${total_occurences_nb}"' fois au total dans les vidéos suivantes :')
     fi
 
     last_video=''
@@ -165,15 +179,16 @@ main() {
 
         if [ "${last_video}" != "${video_id}" ]; then
             if [ "${total_occurences_nb}" -gt "${MAX_MATCHES}" ]; then
+                last_element=$(("${#entire_text[@]}"-1))
                 if [ "${occurences_per_video}" -eq '1' ]; then
-                    entire_text="${entire_text} *<${occurences_per_video} occurence>*"
+                    entire_text["${last_element}"]+=' *<'"${occurences_per_video}"' occurence>*'
                 elif [ "${occurences_per_video}" -ge '2' ]; then
-                    entire_text="${entire_text} *<${occurences_per_video} occurences>*"
+                    entire_text["${last_element}"]+=' *<'"${occurences_per_video}"' occurences>*'
                 fi
                 occurences_per_video='1'
             fi
             last_video="${video_id}"
-            entire_text="${entire_text}\n$(printf -- '- [%s](%s)\n' "${video_name}" '<'"${video_url}"'>')"
+            entire_text+=('- ['"${video_name}"'](<'"${video_url}"'>)')
         else
             ((occurences_per_video++))
         fi
@@ -187,25 +202,26 @@ main() {
             ts_to_s="$(printf -- '%02d' "$((timestamp_start%60))")"
             text="$(backticks_remover "$(awk -F '\t' -- '{for (i=3; i<=NF; i++) print $i}' <<< "${timestamps_and_text}")")"
 
-            entire_text="${entire_text}\n$(printf -- '  - [%s:%s:%s](%s) : `%s`\n' "${ts_to_h}" "${ts_to_m}" "${ts_to_s}" '<'"${video_url}"'&t='"${timestamp_start}"'>' "${text}")"
+            entire_text+=('  - ['"${ts_to_h}"':'"${ts_to_m}"':'"${ts_to_s}"'](<'"${video_url}"'&t='"${timestamp_start}"'>) : `'"${text}"'`')
         fi
-    done <<< "${all_lines}"
+    done <<< "${all_grepped_lines}"
 
     # Oui oui, "Beurk c'est laid ce doublon", mais j'ai pas d'autre solution pour afficher le nombre d'occurences de la dernière vidéo pour le moment...
     if [ "${total_occurences_nb}" -gt "${MAX_MATCHES}" ]; then
+        last_element=$(("${#entire_text[@]}"-1))
         if [ "${occurences_per_video}" -eq '1' ]; then
-            entire_text="${entire_text} <${occurences_per_video} occurence>"
+            entire_text["${last_element}"]+=' *<'"${occurences_per_video}"' occurence>*'
         elif [ "${occurences_per_video}" -ge '2' ]; then
-            entire_text="${entire_text} <${occurences_per_video} occurences>"
+            entire_text["${last_element}"]+=' *<'"${occurences_per_video}"' occurences>*'
         fi
     fi
 
 
     if [ "${total_occurences_nb}" -gt "${MAX_MATCHES}" ]; then
-        entire_text="${entire_text}\n$(printf -- '### Trop de résultats pour afficher le détail des occurences\n')"
+        entire_text+=('### Trop de résultats pour afficher le détail des occurences')
     fi
-    entire_text="${entire_text}\n$(show_footer)"
+    entire_text+=("$(show_footer)")
 }
 
 main "${*}"
-split_text_into_chunks "${entire_text}"
+split_text_into_chunks "${entire_text[@]}"

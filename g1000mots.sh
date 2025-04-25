@@ -20,6 +20,10 @@ DISCORD_MAX_MESSAGE_SENDING_RETRIES="${DISCORD_MAX_MESSAGE_SENDING_RETRIES:-2}"
 LOG_FILE="${LOG_FILE:-/dev/null}"
 TSV_EXTENSION="${TSV_EXTENSION:-.tsv}"
 
+if [ "${#}" -lt '2' ]; then
+    printf -- 'Usage: %s <mode> <search>\n' "${0}"
+    exit '1'
+fi
 if [ -z "${TSV_DIR}" ]; then
     printf -- 'TSV_DIR environment variable is not defined, aborting\n'
     exit '2'
@@ -43,6 +47,28 @@ if "${DISCORD_ENABLE}"; then
         exit '6'
     fi
 fi
+
+case "${1}" in
+    default)
+        SEARCH_MODE="default"
+        shift -- '1'
+        ;;
+    wholeword)
+        SEARCH_MODE="wholeword"
+        shift -- '1'
+        ;;
+    exact)
+        SEARCH_MODE="exact"
+        shift -- '1'
+        ;;
+    wholeword-exact)
+        SEARCH_MODE="wholeword-exact"
+        shift -- '1'
+        ;;
+    *)
+        SEARCH_MODE="default"
+        ;;
+esac
 
 backticks_remover() {
     sed -- 's/`//g' <<< "${1}"
@@ -156,7 +182,17 @@ main() {
         return '1'
     fi
 
-    all_grepped_lines="$(grep -FHi -- "${search}" "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' -- | sed -- 's/^$//')"
+    if [ "${SEARCH_MODE}" == 'default' ]; then
+        all_grepped_lines="$(grep -FHi -- "${search}" "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' --)"
+    elif [ "${SEARCH_MODE}" == 'wholeword' ]; then
+        search="$(sed -- 's/[^a-zA-Z0-9ÀàÂâÇçÉéÈèÊêËëÎîÏïijÔôÙùÛûÜü ,!;%@"&:'"'"'-]*//g' <<< "${search}")" # forbidden characters: .^$*[]\?+{}
+        all_grepped_lines="$(grep -Hi -- '\b'"${search}"'\b' "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' --)"
+    elif [ "${SEARCH_MODE}" == 'exact' ]; then
+        all_grepped_lines="$(grep -FH -- "${search}" "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' --)"
+    elif [ "${SEARCH_MODE}" == 'wholeword-exact' ]; then
+        search="$(sed -- 's/[^a-zA-Z0-9ÀàÂâÇçÉéÈèÊêËëÎîÏïijÔôÙùÛûÜü ,!;%@"&:'"'"'-]*//g' <<< "${search}")" # forbidden characters: .^$*[]\?+{}
+        all_grepped_lines="$(grep -H -- '\b'"${search}"'\b' "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' --)"
+    fi
     total_occurences_nb="$(wc -l <<< "${all_grepped_lines}")"
     
     if [ -z "${all_grepped_lines}" ]; then # "wc -l" returns 1 even if "${all_grepped_lines}" is empty (instead of 0)

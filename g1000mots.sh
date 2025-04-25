@@ -21,60 +21,31 @@ DISCORD_MAX_MESSAGE_SENDING_RETRIES="${DISCORD_MAX_MESSAGE_SENDING_RETRIES:-2}"
 LOG_FILE="${LOG_FILE:-/dev/null}"
 TSV_EXTENSION="${TSV_EXTENSION:-.tsv}"
 
-if [ "${#}" -lt '2' ]; then
-    printf -- 'Usage: %s <mode> <search>\n' "${0}"
-    exit '1'
-fi
-if [ -z "${TSV_DIR}" ]; then
-    printf -- 'TSV_DIR environment variable is not defined, aborting\n'
-    exit '2'
-else
-    [[ "${TSV_DIR}" != */ ]] && TSV_DIR="${TSV_DIR}"'/'
-    if [ ! -d "${TSV_DIR}" ]; then
-        printf -- 'Directory "%s" does not exist, aborting\n' "${TSV_DIR}"
-        exit '3'
-    fi
-    if [ "$(find "${TSV_DIR}" -type 'f' -name '*'"${TSV_EXTENSION}" | wc -l --)" -eq '0' ]; then
-        printf -- 'Directory "%s" does not contain any "%s" file, aborting\n' "${TSV_DIR}" "${TSV_EXTENSION}"
-        exit '4'
-    fi
-fi
-if "${DISCORD_ENABLE}"; then
-    if [ -z "${DISCORD_TOKEN}" ]; then
-        printf -- 'DISCORD_TOKEN environment variable is not defined, aborting\n'
-        exit '5'
-    elif [ -z "${DISCORD_CHANNEL_ID}" ]; then
-        printf -- 'DISCORD_CHANNEL_ID environment variable is not defined, aborting\n'
-        exit '6'
-    fi
-fi
-
-case "${1}" in
-    default)
-        GREP_ARGS='i'
-        GREP_MODE='normal'
-        shift -- '1'
-        ;;
-    wholeword)
-        GREP_ARGS='iw'
-        GREP_MODE='mot entier'
-        shift -- '1'
-        ;;
-    exact)
-        GREP_ARGS=''
-        GREP_MODE='exact'
-        shift -- '1'
-        ;;
-    wholeword-exact)
-        GREP_ARGS='w'
-        GREP_MODE='mot entier exact'
-        shift -- '1'
-        ;;
-    *)
-        GREP_ARGS='i'
-        GREP_MODE='normal'
-        ;;
-esac
+logs_date_severity() {
+    local severity
+    case "${1}" in
+        C)
+            severity='CRT'
+            ;;
+        E)
+            severity='ERR'
+            ;;
+        W)
+            severity='WRN'
+            ;;
+        I)
+            severity='INF'
+            ;;
+        D)
+            severity='DBG'
+            ;;
+        *)
+            severity='UNK'
+            ;;
+    esac
+    printf -- '[%s]\t%s\t' "$(date -- '+%Y-%m-%d %H:%M:%S')" "${severity}"
+    return '0'
+}
 
 backticks_remover() {
     sed -- 's/`//g' <<< "${1}"
@@ -99,6 +70,7 @@ send_message_to_discord() {
           -H "Content-Type: application/json" \
           -X 'POST' \
           'https://discordapp.com/api/channels/'"${DISCORD_CHANNEL_ID}"'/messages'; then
+            printf -- '%sFailed to send curl request in time\n' "$(logs_date_severity 'E')" >> "${LOG_FILE}"
             return '2'
         fi
         sleep -- "${DISCORD_SENDING_COOLDOWN}"
@@ -144,6 +116,7 @@ split_text_into_chunks() {
                 if [ "${retry_time}" == '' ]; then
                     break -- '1'
                 else
+                    printf -- '%sRate limited by Discord, waiting for "%s"s\n' "$(logs_date_severity 'I')" "${retry_time}" >> "${LOG_FILE}"
                     sleep -- "${retry_time}"
                 fi
             done
@@ -193,7 +166,7 @@ main() {
     number_of_different_files="$(grep -Flr"${GREP_ARGS}" --include '*'"${TSV_EXTENSION}" -- "${search}" "${TSV_DIR}" | wc -l --)"
     total_occurences_nb="$(wc -l <<< "${all_grepped_lines}")"
 
-    entire_text+=('*Mode de recherche : **'"${GREP_MODE}"'***')
+    entire_text+=('__*mode de recherche : **'"${GREP_MODE}"'***__')
     if [ "${number_of_different_files}" -eq '0' ]; then
         entire_text+=('## Le terme `'"${search}"'` semble\* n'"'"'avoir jamais été prononcé dans une vidéo')
         entire_text+=("$(show_footer)")
@@ -240,7 +213,6 @@ main() {
             ts_to_m="$(printf -- '%02d' "$((timestamp_start/60%60))")"
             ts_to_s="$(printf -- '%02d' "$((timestamp_start%60))")"
             text="$(backticks_remover "$(awk -F '\t' -- '{for (i=3; i<=NF; i++) print $i}' <<< "${timestamps_and_text}")")"
-
             entire_text+=('  - ['"${ts_to_h}"':'"${ts_to_m}"':'"${ts_to_s}"'](<'"${video_url}"'&t='"${timestamp_start}"'>) : `'"${text}"'`')
         fi
     done <<< "${all_grepped_lines}"
@@ -261,6 +233,63 @@ main() {
     fi
     entire_text+=("$(show_footer)")
 }
+
+
+if [ "${#}" -lt '2' ]; then
+    printf -- '%sUsage: %s <mode> <search>\n' "$(logs_date_severity 'C')" "${0}" >> "${LOG_FILE}"
+    exit '1'
+fi
+if [ -z "${TSV_DIR}" ]; then
+    printf -- '%sTSV_DIR environment variable is not defined, aborting\n' "$(logs_date_severity 'C')" >> "${LOG_FILE}"
+    exit '2'
+else
+    [[ "${TSV_DIR}" != */ ]] && TSV_DIR="${TSV_DIR}"'/'
+    if [ ! -d "${TSV_DIR}" ]; then
+        printf -- '%sDirectory "%s" does not exist, aborting\n' "$(logs_date_severity 'C')" "${TSV_DIR}" >> "${LOG_FILE}"
+        exit '3'
+    fi
+    if [ "$(find "${TSV_DIR}" -type 'f' -name '*'"${TSV_EXTENSION}" | wc -l --)" -eq '0' ]; then
+        printf -- '%sDirectory "%s" does not contain any "%s" file, aborting\n' "$(logs_date_severity 'C')" "${TSV_DIR}" "${TSV_EXTENSION}" >> "${LOG_FILE}"
+        exit '4'
+    fi
+fi
+if "${DISCORD_ENABLE}"; then
+    if [ -z "${DISCORD_TOKEN}" ]; then
+        printf -- '%sDISCORD_TOKEN environment variable is not defined, aborting\n' "$(logs_date_severity 'C')" >> "${LOG_FILE}"
+        exit '5'
+    elif [ -z "${DISCORD_CHANNEL_ID}" ]; then
+        printf -- '%sDISCORD_CHANNEL_ID environment variable is not defined, aborting\n' "$(logs_date_severity 'C')" >> "${LOG_FILE}"
+        exit '6'
+    fi
+fi
+
+case "${1}" in
+    default)
+        GREP_ARGS='i'
+        GREP_MODE='normal'
+        shift -- '1'
+        ;;
+    wholeword)
+        GREP_ARGS='iw'
+        GREP_MODE='mot entier'
+        shift -- '1'
+        ;;
+    exact)
+        GREP_ARGS=''
+        GREP_MODE='correspondance exacte'
+        shift -- '1'
+        ;;
+    wholeword-exact)
+        GREP_ARGS='w'
+        GREP_MODE='mot entier + correspondance exacte'
+        shift -- '1'
+        ;;
+    *)
+        GREP_ARGS='i'
+        GREP_MODE='normal'
+        printf -- '%sInvalid supplied GREP_MODE, using the default one ("%s")\n' "$(logs_date_severity 'W')" "${GREP_MODE}" >> "${LOG_FILE}"
+        ;;
+esac
 
 main "${*}"
 split_text_into_chunks "${entire_text[@]}"

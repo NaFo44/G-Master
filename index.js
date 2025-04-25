@@ -108,7 +108,7 @@ client.on("interactionCreate", async interaction => {
 
   const scriptPath = path.join(__dirname, "g1000mots.sh");
   // Lancement sécurisé du script sans injection possible
-  execFile(scriptPath, [ mot ], (err, stdout, stderr) => {
+  execFile(scriptPath, ['default', mot], (err, stdout, stderr) => {
     // on ne logue rien, on ne répond à personne ici
   });
 });

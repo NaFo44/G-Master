@@ -14,6 +14,7 @@ DISCORD_ENABLE="${DISCORD_ENABLE:-false}"
 SEARCH_MIN_CHARS="${SEARCH_MIN_CHARS:-4}"
 SEARCH_MAX_CHARS="${SEARCH_MAX_CHARS:-100}"
 MAX_MATCHES="${MAX_MATCHES:-100}"
+MAX_MATCHES_LIMIT="${MAX_MATCHES_LIMIT:-1000}"
 DISCORD_MAX_MESSAGE_SIZE="${DISCORD_MAX_MESSAGE_SIZE:-1900}"
 DISCORD_SENDING_COOLDOWN="${DISCORD_SENDING_COOLDOWN:-0.25}"
 DISCORD_MAX_MESSAGE_SENDING_RETRIES="${DISCORD_MAX_MESSAGE_SENDING_RETRIES:-2}"
@@ -50,23 +51,28 @@ fi
 
 case "${1}" in
     default)
-        SEARCH_MODE="default"
+        GREP_ARGS='i'
+        GREP_MODE='normal'
         shift -- '1'
         ;;
     wholeword)
-        SEARCH_MODE="wholeword"
+        GREP_ARGS='iw'
+        GREP_MODE='mot entier'
         shift -- '1'
         ;;
     exact)
-        SEARCH_MODE="exact"
+        GREP_ARGS=''
+        GREP_MODE='exact'
         shift -- '1'
         ;;
     wholeword-exact)
-        SEARCH_MODE="wholeword-exact"
+        GREP_ARGS='w'
+        GREP_MODE='mot entier exact'
         shift -- '1'
         ;;
     *)
-        SEARCH_MODE="default"
+        GREP_ARGS='i'
+        GREP_MODE='normal'
         ;;
 esac
 
@@ -162,6 +168,7 @@ main() {
         printf -- '  SEARCH_MIN_CHARS\t\t\t= "%s"\n' "${SEARCH_MIN_CHARS}"
         printf -- '  SEARCH_MAX_CHARS\t\t\t= "%s"\n' "${SEARCH_MAX_CHARS}"
         printf -- '  MAX_MATCHES\t\t\t\t= "%s"\n' "${MAX_MATCHES}"
+        printf -- '  MAX_MATCHES_LIMIT\t\t\t= "%s"\n' "${MAX_MATCHES_LIMIT}"
         printf -- '  DISCORD_MAX_MESSAGE_SIZE\t\t= "%s"\n' "${DISCORD_MAX_MESSAGE_SIZE}"
         printf -- '  DISCORD_SENDING_COOLDOWN\t\t= "%s"\n' "${DISCORD_SENDING_COOLDOWN}"
         printf -- '  DISCORD_MAX_MESSAGE_SENDING_RETRIES\t= "%s"\n' "${DISCORD_MAX_MESSAGE_SENDING_RETRIES}"
@@ -182,27 +189,23 @@ main() {
         return '1'
     fi
 
-    if [ "${SEARCH_MODE}" == 'default' ]; then
-        all_grepped_lines="$(grep -FHi -- "${search}" "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' --)"
-    elif [ "${SEARCH_MODE}" == 'wholeword' ]; then
-        search="$(sed -- 's/[^a-zA-Z0-9ÀàÂâÇçÉéÈèÊêËëÎîÏïijÔôÙùÛûÜü ,!;%@"&:'"'"'-]*//g' <<< "${search}")" # forbidden characters: .^$*[]\?+{}
-        all_grepped_lines="$(grep -Hi -- '\b'"${search}"'\b' "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' --)"
-    elif [ "${SEARCH_MODE}" == 'exact' ]; then
-        all_grepped_lines="$(grep -FH -- "${search}" "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' --)"
-    elif [ "${SEARCH_MODE}" == 'wholeword-exact' ]; then
-        search="$(sed -- 's/[^a-zA-Z0-9ÀàÂâÇçÉéÈèÊêËëÎîÏïijÔôÙùÛûÜü ,!;%@"&:'"'"'-]*//g' <<< "${search}")" # forbidden characters: .^$*[]\?+{}
-        all_grepped_lines="$(grep -H -- '\b'"${search}"'\b' "${TSV_DIR}"*"${TSV_EXTENSION}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' --)"
-    fi
+    all_grepped_lines="$(grep -FHr"${GREP_ARGS}" --include '*'"${TSV_EXTENSION}" -- "${search}" "${TSV_DIR}" | sed -- 's%'"${TSV_DIR}"'%%' | sort -k '1' -n -s -t '.' --)"
+    number_of_different_files="$(grep -Flr"${GREP_ARGS}" --include '*'"${TSV_EXTENSION}" -- "${search}" "${TSV_DIR}" | wc -l --)"
     total_occurences_nb="$(wc -l <<< "${all_grepped_lines}")"
-    
-    if [ -z "${all_grepped_lines}" ]; then # "wc -l" returns 1 even if "${all_grepped_lines}" is empty (instead of 0)
-        entire_text+=('## Le terme `'"${search}"'` semble\* n'"'"'avoir jamais été prononcé dans une vidéo de G')
+
+    entire_text+=('*Mode de recherche : **'"${GREP_MODE}"'***')
+    if [ "${number_of_different_files}" -eq '0' ]; then
+        entire_text+=('## Le terme `'"${search}"'` semble\* n'"'"'avoir jamais été prononcé dans une vidéo')
         entire_text+=("$(show_footer)")
         return '1'
-    elif [ "${total_occurences_nb}" -eq '1' ]; then
+    elif [ "${total_occurences_nb}" -gt "${MAX_MATCHES_LIMIT}" ]; then
+        entire_text+=('## Beaucoup trop de résultats\* pour le terme `'"${search}"'` ('"${total_occurences_nb}"' occurences dans '"${number_of_different_files}"' vidéos), merci de faire une recherche moins générique')
+        entire_text+=("$(show_footer)")
+        return '1'
+    elif [ "${number_of_different_files}" -eq '1' ]; then
         entire_text+=('## Le terme `'"${search}"'` semble\* avoir été prononcé '"${total_occurences_nb}"' fois dans la vidéo suivante :')
     else
-        entire_text+=('## Le terme `'"${search}"'` semble\* avoir été prononcé '"${total_occurences_nb}"' fois au total dans les vidéos suivantes :')
+        entire_text+=('## Le terme `'"${search}"'` semble\* avoir été prononcé '"${total_occurences_nb}"' fois au total dans les '"${number_of_different_files}"' vidéos suivantes :')
     fi
 
     last_video=''

@@ -174,29 +174,42 @@ client.on("messageCreate", async message => {
     modified = true;
   }
 
-  // "quoi" → "feur"
-  const words = newMessage.split(/\s+/);
-  const lastWord = words[words.length - 1].toLowerCase();
-  if (["quoi", "quoi?", "quoi ?", "quoi "].includes(lastWord)) {
+  client.on("messageCreate", async message => {
+  if (message.author.bot) return;
+  if (!allowedChannels.includes(message.channel.id)) return;
+
+  const raw = message.content.trim().toLowerCase();
+
+  // quoi → feur
+  if (/^quoi[!?]?$/i.test(raw)) {
     try {
       await message.channel.send("feur");
       quoiCount++;
-    } catch {}
+    } catch (err) {
+      console.error("Échec envoi feur :", err);
+    }
+    return;
   }
 
-  // "quoi" → "feur"
-  if (["bonne nuit", "Bonne nuit", "bonne nuit !", "Bonne nuit !"].includes(lastWord)) {
+  // bonne nuit → medbed activé !
+  if (/^bonne nuit[.!?]?$/i.test(raw)) {
     try {
       await message.channel.send("medbed activé !");
-    } catch {}
+    } catch (err) {
+      console.error("Échec envoi medbed :", err);
+    }
+    return;
   }
 
-  // "non" → "bril"
-  if (["non", "non.", "non "].includes(lastWord)) {
+  // non → bril
+  if (/^non[.!?]?$/i.test(raw)) {
     try {
       await message.channel.send("bril");
       nonCount++;
-    } catch {}
+    } catch (err) {
+      console.error("Échec envoi bril :", err);
+    }
+    return;
   }
 
   // Si on a modifié le message, on l'envoie et le supprime au bout de 30s

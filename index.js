@@ -67,7 +67,7 @@ let quantiqueCount = 0;
 
 const messageFin = `# GMilgram - C'est la fin !
 Ça y est ! Tu as terminé toutes les énigmes de la communauté !  
-Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (...adeau, pas besoin de partir en pleine nuit avec une pelle...).  
+Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).  
 ||@everyone||`;
 
 client.once("ready", () => {
@@ -134,15 +134,15 @@ client.on("messageCreate", async message => {
   if (newMessage.toLowerCase().includes("gé")) {
     newMessage = newMessage
       .replaceAll(
-        /([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"]|$)/gi,
+        /([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi,
         "$1-G-"
       )
-      .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"]|$)/gi, "G-")
+      .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
       .replaceAll(
-        /(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"]|$)/gi,
+        /(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi,
         "$1G"
       )
-      .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"])gé/gi, "-G");
+      .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé/gi, "-G");
     geReplacementCount++;
     modified = true;
   }

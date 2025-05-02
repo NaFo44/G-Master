@@ -185,7 +185,6 @@ client.on("messageCreate", async message => {
   }
 
   // "quoi" → "feur"
-  const words = newMessage.split(/\s+/);
   const lastWord = words[words.length - 1].toLowerCase();
   if (["bonne nuit", "Bonne nuit", "bonne nuit !", "Bonne nuit !"].includes(lastWord)) {
     try {

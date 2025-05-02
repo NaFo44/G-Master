@@ -184,6 +184,15 @@ client.on("messageCreate", async message => {
     } catch {}
   }
 
+  // "quoi" → "feur"
+  const words = newMessage.split(/\s+/);
+  const lastWord = words[words.length - 1].toLowerCase();
+  if (["bonne nuit", "Bonne nuit", "bonne nuit !", "Bonne nuit !"].includes(lastWord)) {
+    try {
+      await message.channel.send("medbed activé !");
+    } catch {}
+  }
+
   // "non" → "bril"
   if (["non", "non.", "non "].includes(lastWord)) {
     try {

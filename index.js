@@ -14,6 +14,30 @@ const { execFile } = require("child_process");
 const exec = promisify(_exec);
 
 const app = express();
+
+// === Définition des modes de recherche ===
+const modes = [
+  { name: "default", description: "Recherche standard (insensible à la casse, substring)" },
+  { name: "wholeword", description: "Recherche par mot complet (insensible à la casse)" },
+  { name: "exact", description: "Recherche exacte (sensible à la casse, substring)" },
+  { name: "wholeword-exact", description: "Recherche par mot complet ET sensible à la casse" },
+];
+
+// === Création dynamique des slash commands ===
+const slashCommands = modes.map(mode =>
+  new SlashCommandBuilder()
+    .setName(mode.name)
+    .setDescription(mode.description)
+    .addStringOption(opt =>
+      opt
+        .setName("mot")
+        .setDescription("Le mot à chercher")
+        .setRequired(true)
+    )
+    .setDefaultPermission(true)
+    .toJSON()
+);
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -43,7 +67,7 @@ let quantiqueCount = 0;
 
 const messageFin = `# GMilgram - C'est la fin !
 Ça y est ! Tu as terminé toutes les énigmes de la communauté !  
-Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).  
+Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (...adeau, pas besoin de partir en pleine nuit avec une pelle...).  
 ||@everyone||`;
 
 client.once("ready", () => {
@@ -53,24 +77,11 @@ client.once("ready", () => {
   client.user.setActivity("En ligne !", { type: "PLAYING" });
 });
 
-// === Slash command /search ===
-const searchCommand = new SlashCommandBuilder()
-  .setName("search")
-  .setDescription("Cherche un mot dans les fichiers .tsv")
-  .addStringOption(opt =>
-    opt
-      .setName("mot")
-      .setDescription("Le mot à chercher")
-      .setRequired(true)
-  )
-  .setDefaultPermission(true)
-  .toJSON();
-
+// === Enregistrement des slash commands ===
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   try {
     console.log("Enregistrement des commandes slash...");
-
     if (process.env.GUILD_ID) {
       // En développement : on déploie sur la guilde de test uniquement
       await rest.put(
@@ -78,37 +89,35 @@ async function registerCommands() {
           process.env.CLIENT_ID,
           process.env.GUILD_ID
         ),
-        { body: [searchCommand] }
+        { body: slashCommands }
       );
-      console.log("Commande /search enregistrée en scope guilde.");
+      console.log("Commandes enregistrées en scope guilde.");
     } else {
       // En production : on déploie globalement
       await rest.put(
         Routes.applicationCommands(process.env.CLIENT_ID),
-        { body: [searchCommand] }
+        { body: slashCommands }
       );
-      console.log("Commande /search enregistrée en scope global.");
+      console.log("Commandes enregistrées en scope global.");
     }
-
   } catch (error) {
     console.error("Erreur lors de l'enregistrement des slash-commands :", error);
   }
 }
-
 registerCommands();
 
 // === Gestion des slash commands ===
 client.on("interactionCreate", async interaction => {
-  if (!interaction.isChatInputCommand() || interaction.commandName !== "search")
-    return;
+  if (!interaction.isChatInputCommand()) return;
+  const mode = interaction.commandName;
+  if (!modes.find(m => m.name === mode)) return;
 
-  // On récupère la valeur brute de l'option, espaces inclus
-  const motOption = interaction.options.get("mot");
-  const mot = typeof motOption?.value === "string" ? motOption.value : "";
+  // On récupère le mot à chercher
+  const mot = interaction.options.getString("mot") ?? "";
 
+  // Lancement du script Bash avec le mode choisi en premier argument
   const scriptPath = path.join(__dirname, "g1000mots.sh");
-  // Lancement sécurisé du script sans injection possible
-  execFile(scriptPath, ['default', mot], (err, stdout, stderr) => {
+  execFile(scriptPath, [mode, mot], (err, stdout, stderr) => {
     // on ne logue rien, on ne répond à personne ici
   });
 });
@@ -125,15 +134,15 @@ client.on("messageCreate", async message => {
   if (newMessage.toLowerCase().includes("gé")) {
     newMessage = newMessage
       .replaceAll(
-        /([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi,
+        /([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"])gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"]|$)/gi,
         "$1-G-"
       )
-      .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
+      .replaceAll(/gé(?![[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"]|$)/gi, "G-")
       .replaceAll(
-        /(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi,
+        /(^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"])gé(?=[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"]|$)/gi,
         "$1G"
       )
-      .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé/gi, "-G");
+      .replaceAll(/(?!^|[[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'\"])gé/gi, "-G");
     geReplacementCount++;
     modified = true;
   }
@@ -229,3 +238,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+

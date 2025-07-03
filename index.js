@@ -127,7 +127,7 @@ client.on("interactionCreate", async interaction => {
     const lines = sorted.map(([userId, info], idx) =>
       `${idx + 1}. ${info.name}: ${info.score} pts`
     );
-    await interaction.reply(`**Classement BOUH-tiques :**\n${lines.join("\n")}`);
+    await interaction.reply(`**Classement Lyllit-Update :**\n${lines.join("\n")}`);
     return;
   }
 
@@ -163,7 +163,7 @@ client.on("messageCreate", async message => {
   const lower = raw.toLowerCase();
 
   // -- Jeu de puns "BOUH" --
-  if (lower.startsWith("bouh")) {
+  if (lower.includes("bouh")) {
     channelData.currentRound = message.id;
     channelData.usedPuns = {};
     saveData();

@@ -129,7 +129,7 @@ client.on('messageCreate', async (message) => {
   if (content.includes("bouh") && !message.reference) {
     activeMessageId = message.id;
     usedWords = new Set();
-    message.channel.send("👻 Partie lancée ! Répondez à ce message avec votre jeu de mot.");
+    message.channel.send("👻 Partie lancée ! Répondez à `BOUH` avec vos réponses !.");
     return;
   }
 

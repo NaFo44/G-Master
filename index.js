@@ -86,7 +86,7 @@ function loadScores() {
 function saveScores() {
   fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
 }
-èèè
+
 // === Événement ready ===
 client.once("ready", () => {
   console.log("Le bot est prêt !");

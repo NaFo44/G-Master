@@ -190,7 +190,7 @@ client.on("interactionCreate", async interaction => {
   const scriptPath = path.join(__dirname, "g1000mots.sh");
 
   // Acknowledge the command
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   execFile("bash", [scriptPath, mode, mot], (err, stdout, stderr) => {
     if (err) {

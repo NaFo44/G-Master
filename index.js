@@ -119,59 +119,64 @@ async function registerCommands() {
 }
 registerCommands();
 
-// === Lyllit Game ===
+// === Lyllit Game – version simplifiée ===
+const replyCounts = {};    // pour compter les réponses par partie
+const usedContents = {};   // pour stocker les contenus déjà vus
+
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
   const content = message.content.toLowerCase();
 
-  // Lancement de partie
+  // 1) Lancement de la partie
   if (content.includes("bouh") && !message.reference) {
     activeMessageId = message.id;
-    usedWords = new Set();
-    message.channel.send("👻 Partie lancée ! Répondez à `BOUH` avec vos réponses !.");
+    replyCounts[activeMessageId] = 0;
+    usedContents[activeMessageId] = new Set();
+    await message.channel.send("👻 Partie lancée ! Répondez au `BOUH` initial.");
     return;
   }
 
-  // Traitement des blagues (réponses à BOUH)
-  if (activeMessageId && message.reference?.messageId === activeMessageId) {
-    const words = message.content.toLowerCase().split(/\s+/).slice(0, 3);
-    for (let word of words) {
-      if (word.startsWith("bouh") && word !== "bouh") {
-        if (!usedWords.has(word)) {
-          usedWords.add(word);
-          const userId = message.author.id;
-          scores[userId] = (scores[userId] || 0) + 1;
-          saveScores();
-          await message.react("✅");
-        } else {
-          const userId = message.author.id;
-          scores[userId] = (scores[userId] || 0) - 1;
-          saveScores();
-          await message.channel.send(`❌ Déjà faite pas **${word}** !`);
-        }
-        break;
-      }
+  // 2) Traitement des réponses au "BOUH" initial
+  if (
+    activeMessageId && 
+    message.reference?.messageId === activeMessageId && 
+    replyCounts[activeMessageId] < 3
+  ) {
+    const replyContent = content.trim();
+
+    // Si déjà proposé → –1 point, sinon +1
+    const userId = message.author.id;
+    if (usedContents[activeMessageId].has(replyContent)) {
+      scores[userId] = (scores[userId] || 0) - 1;
+      await message.channel.send(`❌ Contenu déjà posté : **${message.content}**`);
+    } else {
+      usedContents[activeMessageId].add(replyContent);
+      scores[userId] = (scores[userId] || 0) + 1;
+      await message.react("✅");
     }
+
+    saveScores();
+    replyCounts[activeMessageId] += 1;
+    return;
   }
 
-  // Classement
+  // 3) Affichage du classement
   if (content.startsWith(".rank")) {
     if (Object.keys(scores).length === 0) {
-      message.channel.send("Aucun score pour l’instant.");
-      return;
+      return await message.channel.send("Aucun score pour l’instant.");
     }
 
-    let entries = Object.entries(scores);
-    entries.sort((a, b) => b[1] - a[1]);
+    const entries = Object.entries(scores)
+      .sort(([,a], [,b]) => b - a);
 
-    let lines = entries.map(([userId, score], i) => {
+    const lines = entries.map(([userId, score], i) => {
       const user = client.users.cache.get(userId);
-      const name = user ? user.username : `Utilisateur inconnu (${userId})`;
+      const name = user ? user.username : `Inconnu (${userId})`;
       return `${i + 1}. **${name}** : ${score} point${score !== 1 ? 's' : ''}`;
     });
 
-    message.channel.send("**🏆 Classement :**\n" + lines.join("\n"));
+    await message.channel.send("**🏆 Classement :**\n" + lines.join("\n"));
   }
 });
 

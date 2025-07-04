@@ -119,8 +119,8 @@ async function registerCommands() {
 }
 registerCommands();
 
-// === Lyllit Game – version simplifiée ===
-// === Lyllit Game – version simplifiée avec .rank prioritaire ===
+// === Lylitt Game – version simplifiée ===
+// === Lylitt Game – version simplifiée avec .rank prioritaire ===
 const replyCounts = {};    // pour compter les réponses par partie
 const usedContents = {};   // pour stocker les contenus déjà vus
 

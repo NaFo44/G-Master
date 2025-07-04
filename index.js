@@ -194,9 +194,9 @@ client.on("interactionCreate", async interaction => {
 
   execFile("bash", [scriptPath, mode, mot], (err, stdout, stderr) => {
     if (err) {
-      await interaction.editReply({ content: `Erreur lors de l'exécution : ${err.message}` });
+      interaction.editReply({ content: `Erreur lors de l'exécution : ${err.message}` });
     } else {
-      await interaction.editReply({ content: `${stdout}` });
+      interaction.editReply({ content: `-# Recherche en cours...${stdout}` });
     }
   });
 });
@@ -258,11 +258,11 @@ client.on("messageCreate", async message => {
 
   const raw = message.content.trim().toLowerCase();
 
-  if (/^.*quoi *[.!?]?$/i.test(raw)) {
+  if (/^.*quoi[ .!?]*$/i.test(raw)) {
     try { await message.channel.send("feur."); quoiCount++; } catch {}
     return;
   }
-  if (/^.*non *[.!?]?$/i.test(raw)) {
+  if (/^.*non[ .!?]*$/i.test(raw)) {
     try { await message.channel.send("bril."); nonCount++; } catch {}
     return;
   }

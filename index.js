@@ -194,9 +194,9 @@ client.on("interactionCreate", async interaction => {
 
   execFile("bash", [scriptPath, mode, mot], (err, stdout, stderr) => {
     if (err) {
-      interaction.editReply({ content: `Erreur lors de l'exécution : ${err.message}` });
+      await interaction.editReply({ content: `Erreur lors de l'exécution : ${err.message}` });
     } else {
-      interaction.editReply({ content: `${stdout}` });
+      await interaction.editReply({ content: `${stdout}` });
     }
   });
 });
@@ -221,12 +221,12 @@ client.on("messageCreate", async message => {
   }
 
   // Réaction myrtille
-  if (/myrtille|myrtilles/i.test(newMessage)) {
+  if (/myrtilles?/i.test(newMessage)) {
     try { await message.react("🫐"); myrtilleReactionCount++; } catch {}
   }
 
   // Réaction sanglier
-  if (/sanglier/i.test(newMessage)) {
+  if (/sangliers?/i.test(newMessage)) {
     try { await message.react("🐗"); sanglierReactionCount++; } catch {}
   }
 
@@ -258,16 +258,16 @@ client.on("messageCreate", async message => {
 
   const raw = message.content.trim().toLowerCase();
 
-  if (/^quoi[!?]?$/i.test(raw)) {
-    try { await message.channel.send("feur"); quoiCount++; } catch {}
+  if (/^.*quoi *[.!?]?$/i.test(raw)) {
+    try { await message.channel.send("feur."); quoiCount++; } catch {}
     return;
   }
-  if (/^bonne nuit[.!?]?$/i.test(raw)) {
-    try { await message.channel.send("medbed activé !"); } catch {}
+  if (/^.*non *[.!?]?$/i.test(raw)) {
+    try { await message.channel.send("bril."); nonCount++; } catch {}
     return;
   }
-  if (/^non[.!?]?$/i.test(raw)) {
-    try { await message.channel.send("bril"); nonCount++; } catch {}
+  if (/^.*bonne nuit.*$/i.test(raw)) {
+    try { await message.channel.send("Medbed activé !"); } catch {}
     return;
   }
 });

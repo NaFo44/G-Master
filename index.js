@@ -17,6 +17,7 @@ if (!TOKEN || !CLIENT_ID) {
   console.error("Il manque DISCORD_TOKEN ou CLIENT_ID !");
   process.exit(1);
 }
+const SCORES_FILE = process.env.SCORES_FILE || "scores.json";
 
 // === Définition des modes de recherche ===
 const modes = [
@@ -69,7 +70,6 @@ const messageFin = `# GMilgram - C'est la fin !
 Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).  
 ||@everyone||`;
 
-const SCORES_FILE = 'scores.json';
 let scores = {};
 let activeMessageId = null;
 let usedWords = new Set();

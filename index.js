@@ -191,9 +191,7 @@ client.on("interactionCreate", async interaction => {
     if (err) {
       interaction.editReply({ content: `Erreur lors de l'exécution : ${err.message}` });
     } else {
-      interaction.editReply({ content: `Résultat :\n\`\`\`bash
-${stdout}
-\`\`\`` });
+      interaction.editReply({ content: ${stdout}});
     }
   });
 });

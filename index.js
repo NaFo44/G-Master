@@ -69,6 +69,24 @@ const messageFin = `# GMilgram - C'est la fin !
 Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).  
 ||@everyone||`;
 
+const SCORES_FILE = 'scores.json';
+let scores = {};
+let activeMessageId = null;
+let usedWords = new Set();
+
+// Chargement des scores
+function loadScores() {
+  if (fs.existsSync(SCORES_FILE)) {
+    const raw = fs.readFileSync(SCORES_FILE);
+    scores = JSON.parse(raw);
+  }
+}
+
+// Sauvegarde des scores
+function saveScores() {
+  fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
+}
+èèè
 // === Événement ready ===
 client.once("ready", () => {
   console.log("Le bot est prêt !");
@@ -100,6 +118,62 @@ async function registerCommands() {
   }
 }
 registerCommands();
+
+// === Lyllit Game ===
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
+
+  const content = message.content.toLowerCase();
+
+  // Lancement de partie
+  if (content.includes("bouh") && !message.reference) {
+    activeMessageId = message.id;
+    usedWords = new Set();
+    message.channel.send("👻 Partie lancée ! Répondez à ce message avec votre jeu de mot.");
+    return;
+  }
+
+  // Traitement des blagues (réponses à BOUH)
+  if (activeMessageId && message.reference?.messageId === activeMessageId) {
+    const words = message.content.toLowerCase().split(/\s+/).slice(0, 3);
+    for (let word of words) {
+      if (word.startsWith("bouh") && word !== "bouh") {
+        if (!usedWords.has(word)) {
+          usedWords.add(word);
+          const userId = message.author.id;
+          scores[userId] = (scores[userId] || 0) + 1;
+          saveScores();
+          await message.react("✅");
+        } else {
+          const userId = message.author.id;
+          scores[userId] = (scores[userId] || 0) - 1;
+          saveScores();
+          await message.channel.send(`❌ Déjà faite pas **${word}** !`);
+        }
+        break;
+      }
+    }
+  }
+
+  // Classement
+  if (content.startsWith(".rank")) {
+    if (Object.keys(scores).length === 0) {
+      message.channel.send("Aucun score pour l’instant.");
+      return;
+    }
+
+    let entries = Object.entries(scores);
+    entries.sort((a, b) => b[1] - a[1]);
+
+    let lines = entries.map(([userId, score], i) => {
+      const user = client.users.cache.get(userId);
+      const name = user ? user.username : `Utilisateur inconnu (${userId})`;
+      return `${i + 1}. **${name}** : ${score} point${score !== 1 ? 's' : ''}`;
+    });
+
+    message.channel.send("**🏆 Classement :**\n" + lines.join("\n"));
+  }
+});
 
 // === Gestion des slash commands ===
 client.on("interactionCreate", async interaction => {

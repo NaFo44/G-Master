@@ -1,3 +1,57 @@
+function logsDateSeverity(severityCode) {
+    let severity;
+    switch (severityCode) {
+        case 'C':
+            severity = 'CRT';
+            break;
+        case 'E':
+            severity = 'ERR';
+            break;
+        case 'W':
+            severity = 'WRN';
+            break;
+        case 'I':
+            severity = 'INF';
+            break;
+        case 'D':
+            severity = 'DBG';
+            break;
+        default:
+            severity = 'UNK';
+    }
+
+    const currentDateTime = new Date();
+    // Formater la date et l'heure pour le fuseau horaire de Paris
+    const options = {
+        timeZone: 'Europe/Paris',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+
+    const formatter = new Intl.DateTimeFormat('fr-FR', options);
+    const parts = formatter.formatToParts(currentDateTime);
+
+    // Extraction des éléments de la date
+    let year, month, day, hour, minute, second;
+    parts.forEach(part => {
+        switch (part.type) {
+            case 'year': year = part.value; break;
+            case 'month': month = part.value; break;
+            case 'day': day = part.value; break;
+            case 'hour': hour = part.value; break;
+            case 'minute': minute = part.value; break;
+            case 'second': second = part.value; break;
+        }
+    });
+    return `[${year}-${month}-${day} ${hour}:${minute}:${second}]\t${severity}\t`;
+}
+
+
 const { 
   Client, 
   GatewayIntentBits, 
@@ -8,16 +62,22 @@ const {
 const express = require("express");
 const path = require("path");
 const { execFile } = require("child_process");
+const fs = require("fs");
 
 const app = express();
 
 // Vérification des variables d'environnement
 const { DISCORD_TOKEN: TOKEN, CLIENT_ID, GUILD_ID, PORT = 3000 } = process.env;
-if (!TOKEN || !CLIENT_ID) {
-  console.error("Il manque DISCORD_TOKEN ou CLIENT_ID !");
-  process.exit(1);
+if (!TOKEN) {
+    console.log(logsDateSeverity("C") + "Variable d'environnement DISCORD_TOKEN non définie");
+    process.exit(1);
+}
+if (!CLIENT_ID) {
+    console.log(logsDateSeverity("C") + "Variable d'environnement CLIENT_ID non définie");
+    process.exit(1);
 }
 const SCORES_FILE = process.env.SCORES_FILE || "scores.json";
+const TARGET_USER_ID = process.env.TARGET_USER_ID || "819527758501642290";
 
 // === Définition des modes de recherche ===
 const modes = [
@@ -57,13 +117,12 @@ const allowedChannels = [
   "1284829796290793593",
   "1299853826001469561"
 ];
-const TARGET_USER_ID = "819527758501642290";
-let geReplacementCount = 0;
-let myrtilleReactionCount = 0;
-let sanglierReactionCount = 0;
-let quoiCount = 0;
-let nonCount = 0;
-let quantiqueCount = 0;
+//let geReplacementCount = 0;
+//let myrtilleReactionCount = 0;
+//let sanglierReactionCount = 0;
+//let quoiCount = 0;
+//let nonCount = 0;
+//let quantiqueCount = 0;
 
 const messageFin = `# GMilgram - C'est la fin !
 Ça y est ! Tu as terminé toutes les énigmes de la communauté !  
@@ -72,7 +131,7 @@ Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas bes
 
 let scores = {};
 let activeMessageId = null;
-let usedWords = new Set();
+//let usedWords = new Set();
 
 // Chargement des scores
 function loadScores() {
@@ -89,8 +148,8 @@ function saveScores() {
 
 // === Événement ready ===
 client.once("ready", () => {
-  console.log("Le bot est prêt !");
-  console.log(`Connecté en tant que ${client.user.tag}`);
+  console.log(logsDateSeverity("I") + "Le bot est prêt !");
+  console.log(logsDateSeverity("I") + "Connecté en tant que " + client.user.tag);
   client.user.setStatus("online");
   client.user.setActivity("En ligne !", { type: "PLAYING" });
 });
@@ -99,22 +158,22 @@ client.once("ready", () => {
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   try {
-    console.log("Enregistrement des commandes slash...");
+    console.log(logsDateSeverity("I") + "Enregistrement des commandes slash...");
     if (GUILD_ID) {
       await rest.put(
         Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
         { body: slashCommands }
       );
-      console.log("Commandes enregistrées en scope guilde.");
+      console.log(logsDateSeverity("I") + "Commandes enregistrées en scope guilde.");
     } else {
       await rest.put(
         Routes.applicationCommands(CLIENT_ID),
         { body: slashCommands }
       );
-      console.log("Commandes enregistrées en scope global.");
+      console.log(logsDateSeverity("I") + "Commandes enregistrées en scope global.");
     }
   } catch (error) {
-    console.error("Erreur lors de l'enregistrement des slash-commands :", error);
+    console.error(logsDateSeverity("E") + "Erreur lors de l'enregistrement des slash-commands :", error);
   }
 }
 registerCommands();
@@ -125,6 +184,7 @@ const replyCounts = {};    // pour compter les réponses par partie
 const usedContents = {};   // pour stocker les contenus déjà vus
 
 client.on('messageCreate', async (message) => {
+  loadScores();
   if (message.author.bot) return;
   const content = message.content.toLowerCase();
 
@@ -185,8 +245,10 @@ client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
   const mode = interaction.commandName;
   if (!modes.find(m => m.name === mode)) return;
-
   const mot = interaction.options.getString("mot") ?? "";
+
+  console.log(logsDateSeverity("I") + "Recherche du texte \"" + mot + "\" en mode \"" + mode + "\"");
+
   const scriptPath = path.join(__dirname, "g1000mots.sh");
 
   // Acknowledge the command
@@ -194,8 +256,10 @@ client.on("interactionCreate", async interaction => {
 
   execFile("bash", [scriptPath, mode, mot], (err, stdout, stderr) => {
     if (err) {
-      interaction.editReply({ content: `Erreur lors de l'exécution : ${err.message}` });
+      console.log(logsDateSeverity("E") + "Erreur (\"" + err + "\") lors de l'exécution du script (\"" + scriptPath + "\") : " + stderr);
+      interaction.editReply({ content: "Erreur, merci de réessayer plus tard. Si le problème persiste, contacter @TARDIgradeS ou un modo :sweat_smile:" });
     } else {
+      console.log(logsDateSeverity("I") + "Script exécuté correctement");
       interaction.editReply({ content: `-# Recherche en cours...${stdout}` });
     }
   });
@@ -211,43 +275,65 @@ client.on("messageCreate", async message => {
 
   // Remplacement de "gé"
   if (/gé/i.test(newMessage)) {
+    console.log(logsDateSeverity("I") + "Remplacement d'un ou plusieurs \"gé\"");
     newMessage = newMessage
       .replaceAll(/([^[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])?gé(?![\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1-G-")
       .replaceAll(/gé(?![\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "G-")
       .replaceAll(/(^|[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"])gé(?=[\]\s.,\/#!$%\^&\*;:{}=\-_`~()'"]|$)/gi, "$1G")
       .replaceAll(/gé/gi, "-G");
-    geReplacementCount++;
+    //geReplacementCount++;
     modified = true;
   }
 
   // Réaction myrtille
   if (/myrtilles?/i.test(newMessage)) {
-    try { await message.react("🫐"); myrtilleReactionCount++; } catch {}
+    console.log(logsDateSeverity("I") + "Ajout d'une myrtille en tant que réaction");
+    try {
+      await message.react("🫐");
+      //myrtilleReactionCount++;
+    } catch {
+      console.log(logsDateSeverity("E") + "Impossible d'ajouter une myrtille en tant que réaction");
+    }
   }
 
   // Réaction sanglier
   if (/sangliers?/i.test(newMessage)) {
-    try { await message.react("🐗"); sanglierReactionCount++; } catch {}
+    console.log(logsDateSeverity("I") + "Ajout d'un sanglier en tant que réaction");
+    try {
+      await message.react("🐗");
+      //sanglierReactionCount++;
+    } catch {
+      console.log(logsDateSeverity("E") + "Impossible d'ajouter un sanglier en tant que réaction");
+    }
   }
 
   // Message de fin pour l'utilisateur ciblé
   if (/oui oui bien sûr bien sûûûr/i.test(newMessage) && message.author.id === TARGET_USER_ID) {
-    try { await message.channel.send(messageFin); } catch {}
+    console.log(logsDateSeverity("I") + "Envoi du *message de fin*");
+    try {
+      await message.channel.send(messageFin);
+    } catch {
+      console.log(logsDateSeverity("E") + "Impossible d'envoyer le *message de fin*");
+    }
   }
 
   // Lien quantique
   if (/quantique/i.test(newMessage)) {
+    console.log(logsDateSeverity("I") + "Remplacement d'un ou plusieurs \"quantique\"");
     newMessage = newMessage.replace(/quantique/gi, "[quan-tic tac](https://www.youtube.com/watch?v=fmvqz0_KFX0)");
-    quantiqueCount++;
+    //quantiqueCount++;
     modified = true;
   }
 
   // Envoi et suppression si modifié
   if (modified) {
+    console.log(logsDateSeverity("I") + "Envoi du message modifié");
     try {
       const sent = await message.channel.send(newMessage);
       setTimeout(() => sent.delete().catch(() => {}), 30_000);
-    } catch {}
+    } catch {
+      console.log(logsDateSeverity("E") + "Impossible d'envoyer le message modifié");
+    }
   }
 });
 
@@ -259,15 +345,32 @@ client.on("messageCreate", async message => {
   const raw = message.content.trim().toLowerCase();
 
   if (/^.*quoi[ .!?]*$/i.test(raw)) {
-    try { await message.channel.send("feur."); quoiCount++; } catch {}
+    console.log(logsDateSeverity("I") + "Réponse à un \"quoi\" par un \"feur.\"");
+    try {
+      await message.channel.send("feur.");
+      //quoiCount++;
+    } catch {
+      console.log(logsDateSeverity("E") + "Impossible d'envoyer le \"feur.\"");
+    }
     return;
   }
   if (/^.*non[ .!?]*$/i.test(raw)) {
-    try { await message.channel.send("bril."); nonCount++; } catch {}
+    console.log(logsDateSeverity("I") + "Réponse à un \"non\" par un \"bril.\"");
+    try {
+      await message.channel.send("bril.");
+      //nonCount++;
+    } catch {
+      console.log(logsDateSeverity("E") + "Impossible d'envoyer le \"bril.\"");
+    }
     return;
   }
   if (/^.*bonne nuit.*$/i.test(raw)) {
-    try { await message.channel.send("Medbed activé !"); } catch {}
+    console.log(logsDateSeverity("I") + "Réponse à un \"bonne nuit\" par un \"Medbed activé !\"");
+    try {
+      await message.channel.send("Medbed activé !");
+    } catch {
+      console.log(logsDateSeverity("E") + "Impossible d'envoyer le \"Medbed activé !\"");
+    }
     return;
   }
 });
@@ -275,4 +378,4 @@ client.on("messageCreate", async message => {
 // === Démarrage ===
 client.login(TOKEN);
 app.get("/", (req, res) => res.send("OK"));
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+app.listen(PORT, () => console.log(logsDateSeverity("I") + "Le serveur tourne sur le port " + PORT));

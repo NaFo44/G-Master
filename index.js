@@ -129,7 +129,6 @@ Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas bes
 ||@everyone||`;
 
 let scores = {};
-const usedContents = {};
 let activeMessageId = null;
 
 // Chargement des scores

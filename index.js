@@ -51,13 +51,13 @@ function logsDateSeverity(severityCode) {
     return `[${year}-${month}-${day} ${hour}:${minute}:${second}]\t${severity}\t`;
 }
 
-
-const { 
-  Client, 
-  GatewayIntentBits, 
-  REST, 
-  Routes, 
-  SlashCommandBuilder 
+const {
+  Client,
+  GatewayIntentBits,
+  REST,
+  Routes,
+  SlashCommandBuilder,
+  MessageFlags
 } = require("discord.js");
 const express = require("express");
 const path = require("path");
@@ -124,23 +124,26 @@ const allowedChannels = [
 //let quantiqueCount = 0;
 
 const messageFin = `# GMilgram - C'est la fin !
-Ça y est ! Tu as terminé toutes les énigmes de la communauté !  
-Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).  
+Ça y est ! Tu as terminé toutes les énigmes de la communauté !
+Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).
 ||@everyone||`;
 
 let scores = {};
 let activeMessageId = null;
+let initialAuthorId = null;
 
 // Chargement des scores
 function loadScores() {
   if (fs.existsSync(SCORES_FILE)) {
     const raw = fs.readFileSync(SCORES_FILE);
     scores = JSON.parse(raw);
+    console.log(logsDateSeverity("I") + "Lylitt Game : chargement des scores");
   }
 }
 // Sauvegarde des scores
 function saveScores() {
   fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
+  console.log(logsDateSeverity("I") + "Lylitt Game : sauvegarde des scores");
 }
 
 // Chargement des réponses déjà envoyées
@@ -204,12 +207,12 @@ const usedContents = {};   // pour stocker les contenus déjà vus
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-  loadScores();
-  loadUsedContents();
   const content = message.content.toLowerCase();
 
   // 0) Classement : toujours pris en compte en priorité
   if (content.startsWith(".rank")) {
+    loadScores();
+    loadUsedContents();
     console.log(logsDateSeverity("I") + "Lylitt Game : demande d'affichage du classement");
     if (Object.keys(scores).length === 0) {
       return await message.channel.send("Aucun score pour l’instant.");
@@ -229,7 +232,10 @@ client.on('messageCreate', async (message) => {
 
   // 1) Lancement de la partie “BOUH”
   if (content.includes("bouh") && !message.reference) {
+    loadScores();
+    loadUsedContents();
     activeMessageId = message.id;
+    initialAuthorId = message.author.id;
     replyCounts[activeMessageId] = 0;
     usedContents[activeMessageId] = new Set();
     console.log(logsDateSeverity("I") + "Lylitt Game : lancement d'une partie après détection d'un \"BOUH\"");
@@ -239,10 +245,13 @@ client.on('messageCreate', async (message) => {
   // 2) Traitement des trois premières réponses
   if (
     activeMessageId &&
+    message.author.id !== initialAuthorId &&
     message.reference?.messageId === activeMessageId &&
     replyCounts[activeMessageId] < 3
   ) {
-    console.log(logsDateSeverity("I") + "Lylitt Game : analyse d'une réponse (" + replyCounts[activeMessageId] + "/3)");
+    loadScores();
+    loadUsedContents();
+    console.log(logsDateSeverity("I") + "Lylitt Game : analyse d'une réponse (" + (replyCounts[activeMessageId] + 1) + "/3)");
     const replyContent = content.trim();
     const userId = message.author.id;
 
@@ -274,10 +283,9 @@ client.on('messageCreate', async (message) => {
       } catch (error) {
         console.log(logsDateSeverity("E") + "Lylitt Game : impossible d'envoyer la réaction à une réponse validée : " + error + "\"");
       }
+      replyCounts[activeMessageId]++;
+      saveScores();
     }
-
-    saveScores();
-    replyCounts[activeMessageId]++;
     return;
   }
 
@@ -410,7 +418,7 @@ client.on("messageCreate", async message => {
   if (/^.*bonne nuit.*$/i.test(raw)) {
     console.log(logsDateSeverity("I") + "bonne nuit/Medbed activé ! : envoi d'une réponse");
     try {
-      await message.channel.send("Medbed activé !");
+      await message.channel.send("Medbed activé !");
     } catch {
       console.log(logsDateSeverity("E") + "bonne nuit/Medbed activé ! : impossible d'envoyer la réponse");
     }

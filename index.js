@@ -219,7 +219,8 @@ client.on('messageCreate', async (message) => {
     }
 
     const entries = Object.entries(scores)
-      .sort(([, a], [, b]) => b - a);
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5); // TOP 5 uniquement
 
     const lines = entries.map(([userId, score], i) => {
       const user = client.users.cache.get(userId);
@@ -227,7 +228,7 @@ client.on('messageCreate', async (message) => {
       return `${i + 1}. **${name}** : ${score} point${score !== 1 ? 's' : ''}`;
     });
 
-    return await message.channel.send("**🏆 Classement :**\n" + lines.join("\n"));
+    return await message.channel.send("**🏆 Classement (Top 5) :**\n" + lines.join("\n"));
   }
 
   // 1) Lancement de la partie “BOUH”

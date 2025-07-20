@@ -78,6 +78,7 @@ if (!CLIENT_ID) {
 const SCORES_FILE = process.env.SCORES_FILE || "scores.json";
 const USED_CONTENTS_FILE = process.env.USED_CONTENTS_FILE || "used_contents.json";
 const TARGET_USER_ID = process.env.TARGET_USER_ID || "819527758501642290";
+const LYLITT_USER_ID = process.env.TARGET_USER_ID || "460073251352346624";
 
 // === Définition des modes de recherche ===
 const modes = [
@@ -232,7 +233,7 @@ client.on('messageCreate', async (message) => {
   }
 
   // 1) Lancement de la partie “BOUH”
-  if (content.includes("bouh") && !message.reference) {
+  if (message.author.id === LYLITT_USER_ID && content.includes("bouh") && !message.reference) {
     loadScores();
     loadUsedContents();
     activeMessageId = message.id;

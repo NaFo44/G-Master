@@ -407,6 +407,15 @@ client.on("messageCreate", async message => {
     }
     return;
   }
+  if (/^.*oui[ .!?]*$/i.test(raw)) {
+    console.log(logsDateSeverity("I") + "oui/stiti : envoi d'une réponse");
+    try {
+      await message.channel.send("stiti.");
+    } catch {
+      console.log(logsDateSeverity("E") + "oui/stiti : impossible d'envoyer la réponse");
+    }
+    return;
+  }
   if (/^.*non[ .!?]*$/i.test(raw)) {
     console.log(logsDateSeverity("I") + "non/bril : envoi d'une réponse");
     try {

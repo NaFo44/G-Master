@@ -113,7 +113,7 @@ split_text_into_chunks() {
     for chunk in "${chunks[@]}"; do
         if "${DISCORD_ENABLE}"; then
             for((retry_count=0;retry_count<"$((DISCORD_MAX_MESSAGE_SENDING_RETRIES+1))";retry_count++)); do # +1 for the initial attempt
-                curl_discord_answer="$(send_message_to_discord "$(printf -- '%s\n-# [%d/%d]' "${chunk}" "${chunk_index}" "${total_chunks}")")"
+                curl_discord_answer="$(send_message_to_discord "$(printf -- '_ _\n%s\n-# [%d/%d]' "${chunk}" "${chunk_index}" "${total_chunks}")")"
                 retry_time="$(jq '.retry_after // empty' <<< "${curl_discord_answer}")"
                 if [ "${retry_time}" == '' ]; then
                     break -- '1'

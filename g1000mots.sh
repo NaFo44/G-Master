@@ -18,8 +18,10 @@ MAX_MATCHES_LIMIT="${MAX_MATCHES_LIMIT:-1000}"
 DISCORD_MAX_MESSAGE_SIZE="${DISCORD_MAX_MESSAGE_SIZE:-1900}"
 DISCORD_SENDING_COOLDOWN="${DISCORD_SENDING_COOLDOWN:-0.25}"
 DISCORD_MAX_MESSAGE_SENDING_RETRIES="${DISCORD_MAX_MESSAGE_SENDING_RETRIES:-2}"
-LOG_FILE="${LOG_FILE:-/dev/null}"
+LOG_FILE="${LOG_FILE:-/dev/tty}"
 TSV_EXTENSION="${TSV_EXTENSION:-.tsv}"
+BULLET_POINT_SYMBOL="${BULLET_POINT_SYMBOL:-:large_blue_diamond:}"
+SUB_BULLET_POINT_SYMBOL="${SUB_BULLET_POINT_SYMBOL:-:small_orange_diamond:}"
 
 logs_date_severity() {
     local severity
@@ -121,7 +123,7 @@ split_text_into_chunks() {
                 fi
             done
         else
-            send_message_to_discord "$(printf -- '%s\n-# [%d/%d]' "${chunk}" "${chunk_index}" "${total_chunks}")"
+            send_message_to_discord "$(printf -- '_ _\n%s\n-# [%d/%d]' "${chunk}" "${chunk_index}" "${total_chunks}")"
         fi
         ((chunk_index++))
     done
@@ -147,6 +149,8 @@ main() {
         printf -- '  DISCORD_MAX_MESSAGE_SENDING_RETRIES\t= "%s"\n' "${DISCORD_MAX_MESSAGE_SENDING_RETRIES}"
         printf -- '  LOG_FILE\t\t\t\t= "%s"\n' "${LOG_FILE}"
         printf -- '  TSV_EXTENSION\t\t\t\t= "%s"\n' "${TSV_EXTENSION}"
+        printf -- '  BULLET_POINT_SYMBOL\t\t\t= "%s"\n' "${BULLET_POINT_SYMBOL}"
+        printf -- '  SUB_BULLET_POINT_SYMBOL\t\t= "%s"\n' "${SUB_BULLET_POINT_SYMBOL}"
         printf -- '  -----\n'
         printf -- '  search\t\t\t\t= "%s"\n' "${search}"
         printf -- '  search (# of chars)\t\t\t= "%s"\n' "${#search}"
@@ -200,7 +204,7 @@ main() {
                 occurences_per_video='1'
             fi
             last_video="${video_id}"
-            entire_text+=('- ['"${video_name}"'](<'"${video_url}"'>)')
+            entire_text+=("${BULLET_POINT_SYMBOL}"' ['"${video_name}"'](<'"${video_url}"'>)')
         else
             ((occurences_per_video++))
         fi
@@ -213,7 +217,7 @@ main() {
             ts_to_m="$(printf -- '%02d' "$((timestamp_start/60%60))")"
             ts_to_s="$(printf -- '%02d' "$((timestamp_start%60))")"
             text="$(backticks_remover "$(awk -F '\t' -- '{for (i=3; i<=NF; i++) print $i}' <<< "${timestamps_and_text}")")"
-            entire_text+=('  - ['"${ts_to_h}"':'"${ts_to_m}"':'"${ts_to_s}"'](<'"${video_url}"'&t='"${timestamp_start}"'>) : `'"${text}"'`')
+            entire_text+=('    '"${SUB_BULLET_POINT_SYMBOL}"' ['"${ts_to_h}"':'"${ts_to_m}"':'"${ts_to_s}"'](<'"${video_url}"'&t='"${timestamp_start}"'>) : `'"${text}"'`')
         fi
     done <<< "${all_grepped_lines}"
 

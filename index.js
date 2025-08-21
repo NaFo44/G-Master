@@ -222,7 +222,7 @@ client.on('messageCreate', async (message) => {
         await message.delete();
 //      } else {
 //        console.log(logsDateSeverity("E") + "Lylitt Game : permission 'ManageMessages' manquante, impossible de supprimer le message demandant l'affichage du rank");
-      }
+//      }
     } catch (err) {
       console.log(logsDateSeverity("E") + "Lylitt Game : impossible de supprimer le message demandant l'affichage du rank");
     }

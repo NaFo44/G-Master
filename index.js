@@ -218,10 +218,10 @@ client.on('messageCreate', async (message) => {
 
     // Gestion de la suppression du message de demande d'affichage du rank
     try {
-      if (message.guild?.me?.permissionsIn(message.channel).has('ManageMessages')) {
+//      if (message.guild?.me?.permissionsIn(message.channel).has('ManageMessages')) {
         await message.delete();
-      } else {
-        console.log(logsDateSeverity("E") + "Lylitt Game : permission 'ManageMessages' manquante, impossible de supprimer le message demandant l'affichage du rank");
+//      } else {
+//        console.log(logsDateSeverity("E") + "Lylitt Game : permission 'ManageMessages' manquante, impossible de supprimer le message demandant l'affichage du rank");
       }
     } catch (err) {
       console.log(logsDateSeverity("E") + "Lylitt Game : impossible de supprimer le message demandant l'affichage du rank");

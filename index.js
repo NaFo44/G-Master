@@ -211,10 +211,22 @@ client.on('messageCreate', async (message) => {
   const content = message.content.toLowerCase();
 
   // 0) Classement : toujours pris en compte en priorité
-  if (content.startsWith(".rank")) {
+  if (content === '.rank') {
     loadScores();
     loadUsedContents();
     console.log(logsDateSeverity("I") + "Lylitt Game : demande d'affichage du classement");
+
+    // Gestion de la suppression du message de demande d'affichage du rank
+    try {
+      if (message.guild?.me?.permissionsIn(message.channel).has('ManageMessages')) {
+        await message.delete();
+      } else {
+        console.log(logsDateSeverity("E") + "Lylitt Game : permission 'ManageMessages' manquante, impossible de supprimer le message demandant l'affichage du rank");
+      }
+    } catch (err) {
+      console.log(logsDateSeverity("E") + "Lylitt Game : impossible de supprimer le message demandant l'affichage du rank");
+    }
+
     if (Object.keys(scores).length === 0) {
       return await message.channel.send("Aucun score pour l’instant.");
     }

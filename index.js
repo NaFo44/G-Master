@@ -240,8 +240,15 @@ client.on('messageCreate', async (message) => {
       return `${i + 1}. **${name}** : ${score} point${score !== 1 ? 's' : ''}`;
     });
 
-    const sent = await message.channel.send("**🏆 Classement :**\n" + lines.join("\n"));
-    setTimeout(() => sent.delete().catch(() => {}), 30_000);
+    const sent = await message.channel.send("**🏆 Classement :**\n" + lines.join('\n'));
+    setTimeout(async () => {
+      try {
+        await sent.edit('**🏆 Classement (top 5) :**\n' + lines.slice(0, 5).join('\n'));
+        console.log(`${logsDateSeverity('I')} Lylitt Game : message de classement édité (top 5) après 30s`);
+      } catch (err) {
+        console.log(`${logsDateSeverity('E')} Lylitt Game : échec de l’édition du message de classement (top 5)`);
+      }
+    }, 30_000);
   }
 
   // 1) Lancement de la partie “BOUH”

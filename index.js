@@ -415,7 +415,8 @@ client.on("messageCreate", async message => {
       "https://burgerkingfrance.twic.pics/custom-pages/2024/20241028_MastersPerennes/produit_1_1.png",
       "https://dxm.dam.savencia.com/api/wedia/dam/variation/fix635d9eidk9muu7yq33zuescmdts13b7bw94o/savencia_2000_webp",
       "https://marcwiner.com/wp-content/uploads/2024/09/brochettes-teriyaki-en-tete-750x563.jpg",
-      "https://assets.afcdn.com/recipe/20211222/126196_w1024h768c1cx896cy845cxt0cyt0cxb2121cyb1414.jpg"
+      "https://assets.afcdn.com/recipe/20211222/126196_w1024h768c1cx896cy845cxt0cyt0cxb2121cyb1414.jpg",
+      "https://odelices.ouest-france.fr/images/recettes/2015/glace_au_chocolat-1024x1081.jpg"
     ];
     const image_bouffe = images_bouffe[Math.floor(Math.random() * images_bouffe.length)];
     try {

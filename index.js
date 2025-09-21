@@ -65,7 +65,7 @@ const { execFile } = require("child_process");
 const fs = require("fs");
 const app = express();
 
-const gf1Pattern = /(j.?ai|gé?).?(faim|f1)/i;
+const gf1Pattern = /(j.?ai|gé?).?(faim|f1|la dalle)/i;
 const images_bouffe = [
   "https://lelocalapizzas.fr/wp-content/uploads/2023/04/pizza-saumon-creme-fraiche-recette.jpg",
   "https://burgerkingfrance.twic.pics/custom-pages/2024/20241028_MastersPerennes/produit_1_1.png",

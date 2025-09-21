@@ -252,21 +252,32 @@ client.on('messageCreate', async (message) => {
     const entries = Object.entries(scores)
       .sort(([, a], [, b]) => b - a);
 
+//      const lines = entries.map(([userId, score], i) => {
+//      const user = client.users.cache.get(userId);
+//      const name = user ? user.username : `Inconnu (${userId})`;
+//      return `${i + 1}. **${name}** : ${score} point${score !== 1 ? 's' : ''}`;
+//    });
     const lines = entries.map(([userId, score], i) => {
-      const user = client.users.cache.get(userId);
-      const name = user ? user.username : `Inconnu (${userId})`;
-      return `${i + 1}. **${name}** : ${score} point${score !== 1 ? 's' : ''}`;
+      return `${i + 1}. <@${userId}> : ${score} point${score !== 1 ? 's' : ''}`;
     });
 
-    const sent = await message.channel.send("**🏆 Classement :**\n" + lines.join('\n'));
+    const sent = await message.channel.send('Préparation du classement...');
     setTimeout(async () => {
-      try {
-        await sent.edit('**🏆 Classement (top 5) :**\n' + lines.slice(0, 5).join('\n'));
-        console.log(`${logsDateSeverity('I')} Lylitt Game : message de classement édité (top 5) après 30s`);
-      } catch (err) {
-        console.log(`${logsDateSeverity('E')} Lylitt Game : échec de l’édition du message de classement (top 5)`);
+        try {
+            await sent.edit('**🏆 Classement :**\n' + lines.join('\n'));
+            console.log(`${logsDateSeverity('I')} Lylitt Game : message de classement édité (top total) après 1s`);
+            setTimeout(async () => {
+                try {
+                    await sent.edit('**🏆 Classement (top 5) :**\n' + lines.slice(0, 5).join('\n'));
+                    console.log(`${logsDateSeverity('I')} Lylitt Game : message de classement édité (top 5) après 30s`);
+                } catch (err) {
+                    console.log(`${logsDateSeverity('E')} Lylitt Game : échec de l’édition du message de classement (top 5)`);
+                }
+            }, 30_000);
+        } catch (err) {
+        console.log(`${logsDateSeverity('E')} Lylitt Game : échec de l’édition du message de classement (top total)`);
       }
-    }, 30_000);
+    }, 1_000);
   }
 
   // 1) Lancement de la partie “BOUH”

@@ -452,7 +452,7 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
         console.log(logsDateSeverity("E") + "Image de bouffe (message modifié) : impossible d'envoyer l'image");
     }
   }
-}
+});
 
 
 // === Gestion des triggers courts ===

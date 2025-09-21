@@ -444,10 +444,10 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
   if (oldMessage.content === newMessage.content) return;
 
   // Envoi d'images de bouffe si un "j'ai faim" est détecté dans un message modifié
-  if (gf1Pattern.test(newMessage)) {
+  if (gf1Pattern.test(newMessage.content)) {
     const image_bouffe = images_bouffe[Math.floor(Math.random() * images_bouffe.length)];
     try {
-      await message.reply(image_bouffe);
+      await newMessage.reply(image_bouffe);
     } catch (err) {
         console.log(logsDateSeverity("E") + "Image de bouffe (message modifié) : impossible d'envoyer l'image");
     }

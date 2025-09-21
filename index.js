@@ -265,17 +265,17 @@ client.on('messageCreate', async (message) => {
     setTimeout(async () => {
         try {
             await sent.edit('**🏆 Classement :**\n' + lines.join('\n'));
-            console.log(`${logsDateSeverity('I')} Lylitt Game : message de classement édité (top total) après 1s`);
+            console.log(logsDateSeverity('I') + "Lylitt Game : message de classement édité (top total) après 1s");
             setTimeout(async () => {
                 try {
                     await sent.edit('**🏆 Classement (top 5) :**\n' + lines.slice(0, 5).join('\n'));
-                    console.log(`${logsDateSeverity('I')} Lylitt Game : message de classement édité (top 5) après 30s`);
+                    console.log(logsDateSeverity('I') + "Lylitt Game : message de classement édité (top 5) après 30s");
                 } catch (err) {
-                    console.log(`${logsDateSeverity('E')} Lylitt Game : échec de l’édition du message de classement (top 5)`);
+                    console.log(logsDateSeverity('E') + "Lylitt Game : échec de l’édition du message de classement (top 5)");
                 }
             }, 30_000);
         } catch (err) {
-        console.log(`${logsDateSeverity('E')} Lylitt Game : échec de l’édition du message de classement (top total)`);
+        console.log(logsDateSeverity('E') + "Lylitt Game : échec de l’édition du message de classement (top total)");
       }
     }, 1_000);
   }

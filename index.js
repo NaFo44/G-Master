@@ -65,6 +65,24 @@ const { execFile } = require("child_process");
 const fs = require("fs");
 const app = express();
 
+const gf1Pattern = /(j.?ai|gé?).?(faim|f1)/i;
+const images_bouffe = [
+  "https://lelocalapizzas.fr/wp-content/uploads/2023/04/pizza-saumon-creme-fraiche-recette.jpg",
+  "https://burgerkingfrance.twic.pics/custom-pages/2024/20241028_MastersPerennes/produit_1_1.png",
+  "https://dxm.dam.savencia.com/api/wedia/dam/variation/fix635d9eidk9muu7yq33zuescmdts13b7bw94o/savencia_2000_webp",
+  "https://marcwiner.com/wp-content/uploads/2024/09/brochettes-teriyaki-en-tete-750x563.jpg",
+  "https://assets.afcdn.com/recipe/20211222/126196_w1024h768c1cx896cy845cxt0cyt0cxb2121cyb1414.jpg",
+  "https://odelices.ouest-france.fr/images/recettes/2015/glace_au_chocolat-1024x1081.jpg",
+  "https://blog.pourdebon.com/wp-content/uploads/2018/03/omelette-750x500.jpg",
+  "https://www.tables-auberges.com/storage/uploads/2023/10/AdobeStock_478424723-2-1024x683.jpeg",
+  "https://charcuteriepereanselme.fr/cdn/shop/products/IMG_6845.jpg",
+  "https://img.cuisineaz.com/660x495/2015/10/29/i88809-raclette.webp",
+  "https://assets.afcdn.com/recipe/20171218/76132_w1024h768c1cx1872cy2808cxt0cyt0cxb3744cyb5616.jpg",
+  "https://mag.guydemarle.com/app/uploads/2025/04/cassoulet-1024x598.jpg",
+  "https://www.lesfoodies.com/_recipeimage/118317/astuce-conserver-la-salade.jpg",
+  "https://i0.wp.com/cuisinovores.com/wp-content/uploads/2024/10/photo_boeuf_bourguignon_cuisinovores.webp"
+];
+
 // Vérification des variables d'environnement
 const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID, PORT = 3000 } = process.env;
 if (!DISCORD_TOKEN) {
@@ -408,24 +426,34 @@ client.on("messageCreate", async message => {
     }
   }
 
-  // Envoi d'images de bouffe si un "j'ai faim" est détecté
-  if (/j'ai faim/i.test(newMessage)) {
-    const images_bouffe = [
-      "https://lelocalapizzas.fr/wp-content/uploads/2023/04/pizza-saumon-creme-fraiche-recette.jpg",
-      "https://burgerkingfrance.twic.pics/custom-pages/2024/20241028_MastersPerennes/produit_1_1.png",
-      "https://dxm.dam.savencia.com/api/wedia/dam/variation/fix635d9eidk9muu7yq33zuescmdts13b7bw94o/savencia_2000_webp",
-      "https://marcwiner.com/wp-content/uploads/2024/09/brochettes-teriyaki-en-tete-750x563.jpg",
-      "https://assets.afcdn.com/recipe/20211222/126196_w1024h768c1cx896cy845cxt0cyt0cxb2121cyb1414.jpg",
-      "https://odelices.ouest-france.fr/images/recettes/2015/glace_au_chocolat-1024x1081.jpg"
-    ];
+  // Envoi d'images de bouffe si un "j'ai faim" est détecté dans un nouveau message
+  if (gf1Pattern.test(newMessage)) {
     const image_bouffe = images_bouffe[Math.floor(Math.random() * images_bouffe.length)];
     try {
       await message.reply(image_bouffe);
     } catch (err) {
-        console.log(logsDateSeverity("E") + "Image de bouffe : impossible d'envoyer l'image");
+        console.log(logsDateSeverity("E") + "Image de bouffe (nouveau message) : impossible d'envoyer l'image");
     }
   }
 });
+
+
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+  if (newMessage.author.bot) return;
+  if (!allowedChannels.includes(newMessage.channel.id)) return;
+  if (oldMessage.content === newMessage.content) return;
+
+  // Envoi d'images de bouffe si un "j'ai faim" est détecté dans un message modifié
+  if (gf1Pattern.test(newMessage)) {
+    const image_bouffe = images_bouffe[Math.floor(Math.random() * images_bouffe.length)];
+    try {
+      await message.reply(image_bouffe);
+    } catch (err) {
+        console.log(logsDateSeverity("E") + "Image de bouffe (message modifié) : impossible d'envoyer l'image");
+    }
+  }
+}
+
 
 // === Gestion des triggers courts ===
 client.on("messageCreate", async message => {

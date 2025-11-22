@@ -128,6 +128,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildMembers,
   ],
 });
 
@@ -189,6 +190,54 @@ function saveUsedContents() {
 }
 
 
+
+async function getGuild() {
+  // Renvoie une instance de discord.js Guild
+  const guild = await client.guilds.fetch(GUILD_ID);
+  return guild;
+}
+
+async function fetchAllMemberIds(guild) {
+  const members = await guild.members.fetch()
+  console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : " + members.size + " membres trouvés sur le serveur");
+  return [...members.keys()]
+}
+
+async function countAbsentPoints(guild) {
+  // loadScores doit avoir été appelé avant
+  const present = await fetchAllMemberIds(guild)
+  const presentSet = new Set(present)
+  let total = 0
+  let absentCount = 0
+  for (const [id, pts] of Object.entries(scores)) {
+    if (!presentSet.has(id)) {
+      total += Number(pts) || 0
+      absentCount++
+   }
+  }
+  console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : " + absentCount + " utilisateurs ne sont plus sur le serveur pour un total de " + total + "points à redistribuer");
+  return total
+}
+
+async function purgeAbsentScores(guild) {
+  // loadScores doit avoir été appelé avant
+  const present = await fetchAllMemberIds(guild)
+  const presentSet = new Set(present)
+
+  for (const id of Object.keys(scores)) {
+    if (!presentSet.has(id)) {
+        console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : suppression du joueur " + id + " et de ses " + scores[id] + "points"]);
+        delete scores[id];
+    }
+  }
+
+  saveScores()
+}
+
+
+
+
+
 // === Événement ready ===
 client.once("ready", () => {
   console.log(logsDateSeverity("I") + "Général : le bot est prêt et connecté en tant que \"" + client.user.tag + "\"");
@@ -239,6 +288,8 @@ client.on('messageCreate', async (message) => {
     try {
 //      if (message.guild?.me?.permissionsIn(message.channel).has('ManageMessages')) {
         await message.delete();
+        console.log(logsDateSeverity("I") + "Lylitt Game : message \".rank\" envoyé supprimé");
+        await new Promise(r => setTimeout(r, 300)); // Tentative d'empêcher le ".rank" supprimé de réapparaître...
 //      } else {
 //        console.log(logsDateSeverity("E") + "Lylitt Game : permission 'ManageMessages' manquante, impossible de supprimer le message demandant l'affichage du rank");
 //      }
@@ -294,12 +345,7 @@ client.on('messageCreate', async (message) => {
   }
 
   // 2) Traitement des trois premières réponses
-  if (
-    activeMessageId &&
-    message.author.id !== initialAuthorId &&
-    message.reference?.messageId === activeMessageId &&
-    replyCounts[activeMessageId] < 3
-  ) {
+  if (activeMessageId && message.author.id !== initialAuthorId && message.reference?.messageId === activeMessageId && replyCounts[activeMessageId] < 3) {
     loadScores();
     loadUsedContents();
     console.log(logsDateSeverity("I") + "Lylitt Game : analyse d'une réponse (" + (replyCounts[activeMessageId] + 1) + "/3)");
@@ -340,6 +386,48 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
+
+
+  if (message.author.id === LYLITT_USER_ID && content.includes("grrr") && !message.reference && !message.author.bot) {
+    loadScores();
+    const guild = await getGuild();
+    const points = await countAbsentPoints(guild);
+
+    if (points === 0) {
+      console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : annulation du lancement après détection d'un \"Grrr\" (aucun point à redistribuer)");
+      return await message.react("❌");
+    } else {
+      console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : lancement après détection d'un \"Grrr\" (" + points + " point" + (points > 1 ? 's' : '') + " à redistribuer)");
+      return await message.reply("*" +  + "point" + (points > 1 ? 's' : '') + " à redistribuer :clock1230:*");
+    }
+  }
+  
+  if (message.author.id !== LYLITT_USER_ID && message.reference && !message.author.bot) {
+    loadScores();
+    const guild = await getGuild();
+    const points = await countAbsentPoints(guild);
+
+    if (points <= 0) { // Un autre joueur a probablement répondu plus vite, dommage !
+      await message.react('❌');
+      return;
+    }
+
+    const original = await message.channel.messages.fetch(message.reference.messageId);
+    if (original.author.id !== LYLITT_USER_ID || !original.content.toLowerCase().includes('grrr')) return;
+    const diffSec = Math.floor((Date.now() - original.createdTimestamp) / 1000);
+
+    if (points - diffSec + 1 > 0) { // On est sympa, on rajoute 1 seconde...
+      const pointsWon = points - diffSec + 1;
+      const winnerId = message.author.id;
+      console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : " + winnerId + " vient de gagner " + pointWon + " points");
+      scores[winnerId] = (scores[winerId] || 0) + pointsWon;
+      saveScores();
+      purgeAbsentScores(guild);
+      return await message.reply("**Bien joué, tu viens de gagner " + pointsWon + " point" + (pointsWon > 1 ? 's' : '') + " ! :clap:**");
+    } else { // La réponse arrive trop tard, dommage !
+      await message.react('❌');
+    }
+  }
   // (Pas de else ici : tout autre message est ignoré)
 });
 

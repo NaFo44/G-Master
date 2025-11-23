@@ -13,6 +13,7 @@ const replyCounts = {};    // to count replies per game
 const usedContents = {};   // store already used contents
 
 let scores = {};
+export { scores };
 let activeMessageId = null;
 let initialAuthorId = null;
 

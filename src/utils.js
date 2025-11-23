@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { scores } from "./game.js";
 
 const { GUILD_ID } = process.env;
 const SCORES_FILE = process.env.SCORES_FILE || "scores.json";

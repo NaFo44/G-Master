@@ -1,4 +1,3 @@
-import fs from 'fs';
 import { logsDateSeverity } from "./src/utils.js";
 import initGame from "./src/game.js";
 import { handleMessage, handleMessageUpdate, messageReplyHandler } from "./src/messageHandlers.js";

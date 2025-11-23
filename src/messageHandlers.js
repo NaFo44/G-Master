@@ -43,14 +43,21 @@ export async function handleMessage(message) {
     console.log("before reactions");
 
     for (let i = 0; i < reactions.length; i++) {
+        console.log("a");
         if (new RegExp(reactions[i].name, "i").test(newMessage)) {
+            console.log("b");
             console.log(logsDateSeverity("I") + reactions[i].name + " : ajout d'une réaction");
+            console.log("c");
             try {
+                console.log("d");
                 await message.react(reactions[i].emojis);
+                console.log("e");
             } catch {
                 console.log(logsDateSeverity("E") + reactions[i].name + " : impossible d'ajouter une réaction");
             }
+            console.log("f");
         }
+        console.log("g");
     }
 
     console.log("after reactions");

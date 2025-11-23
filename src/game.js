@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { logsDateSeverity } from "./src/utils.js";
 import {
   loadUsedContents,
   saveUsedContents,

@@ -14,8 +14,6 @@ import { execFile } from "child_process";
 import dotenv from "dotenv";
 dotenv.config();
 
-console.log("1");
-
 const app = express();
 const modes = [
   { name: "default", description: "Recherche standard (insensible à la casse, substring)" },
@@ -23,8 +21,7 @@ const modes = [
   { name: "exact", description: "Recherche exacte (sensible à la casse, substring)" },
   { name: "wholeword-exact", description: "Recherche par mot complet ET sensible à la casse" },
 ];
-
-console.log("2");
+const LOG_CHANNEL_ID = "1315805001603481660";
 
 // verify environment variables
 const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID, PORT = 3000 } = process.env;
@@ -37,8 +34,6 @@ if (!CLIENT_ID) {
     process.exit(1);
 }
 
-console.log("3");
-
 // discord.js client setup
 const client = new Client({
   intents: [
@@ -49,8 +44,6 @@ const client = new Client({
     // GatewayIntentBits.GuildMembers
   ],
 });
-
-console.log("4");
 
 // dynamic creation of slash commands
 const slashCommands = modes.map(mode =>
@@ -66,15 +59,33 @@ const slashCommands = modes.map(mode =>
     .toJSON()
 );
 
-console.log("5");
+client.once("ready", async () => {
+  console.log(
+    logsDateSeverity("I") +
+      `Général : le bot est prêt et connecté en tant que "${client.user.tag}"`
+  );
 
-client.once("ready", () => {
-  console.log(logsDateSeverity("I") + "Général : le bot est prêt et connecté en tant que \"" + client.user.tag + "\"");
   client.user.setStatus("online");
   client.user.setActivity("En ligne !", { type: "PLAYING" });
-});
 
-console.log("6");
+  try {
+    const channel = await client.channels.fetch(LOG_CHANNEL_ID);
+
+    if (channel && channel.isTextBased()) {
+      await channel.send("le bot est démarré !");
+    } else {
+      console.log(
+        logsDateSeverity("W") +
+          "Startup msg : salon introuvable"
+      );
+    }
+  } catch (err) {
+    console.error(
+      logsDateSeverity("E") +
+        `Startup msg : impossible d'envoyer le message (${err})`
+    );
+  }
+});
 
 // slash command registration
 async function registerCommands() {
@@ -96,8 +107,6 @@ async function registerCommands() {
   }
 }
 registerCommands();
-
-console.log("7");
 
 // slash command handling
 client.on("interactionCreate", async interaction => {
@@ -124,13 +133,9 @@ client.on("interactionCreate", async interaction => {
   });
 });
 
-console.log("8");
-
 client.on("messageCreate", handleMessage);
 client.on("messageUpdate", handleMessageUpdate);
 client.on("messageCreate", messageReplyHandler);
-
-console.log("9");
 
 // startup
 client.login(DISCORD_TOKEN);

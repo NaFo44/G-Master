@@ -1,21 +1,59 @@
 import {
-  loadScores,
-  saveScores,
   loadUsedContents,
   saveUsedContents,
-  getGuild,
-  countAbsentPoints,
-  purgeAbsentScores
+  getGuild
 } from "./utils.js";
 
+const SCORES_FILE = process.env.SCORES_FILE || "scores.json";
 const LYLITT_USER_ID = process.env.LYLITT_USER_ID || "460073251352346624";
 const replyCounts = {};    // to count replies per game
 const usedContents = {};   // store already used contents
 
 let scores = {};
-export { scores };
 let activeMessageId = null;
 let initialAuthorId = null;
+
+export function loadScores() {
+  if (fs.existsSync(SCORES_FILE)) {
+    const raw = fs.readFileSync(SCORES_FILE);
+    scores = JSON.parse(raw);
+    console.log(logsDateSeverity("I") + "Lylitt Game : chargement des scores");
+  }
+}
+
+export function saveScores() {
+  fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
+  console.log(logsDateSeverity("I") + "Lylitt Game : sauvegarde des scores");
+}
+
+export async function countAbsentPoints(guild) {
+  const present = await fetchAllMemberIds(guild)
+  const presentSet = new Set(present)
+  let total = 0
+  let absentCount = 0
+  for (const [id, pts] of Object.entries(scores)) {
+    if (!presentSet.has(id)) {
+      total += Number(pts) || 0
+      absentCount++
+   }
+  }
+  console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : " + absentCount + " utilisateurs ne sont plus sur le serveur pour un total de " + total + " points à redistribuer");
+  return total
+}
+
+export async function purgeAbsentScores(guild) {
+  const present = await fetchAllMemberIds(guild)
+  const presentSet = new Set(present)
+
+  for (const id of Object.keys(scores)) {
+    if (!presentSet.has(id)) {
+        console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : suppression du joueur " + id + " et de ses " + scores[id] + " points");
+        delete scores[id];
+    }
+  }
+
+  saveScores()
+}
 
 export default async function initGame(message){
   if (message.author.bot) return;

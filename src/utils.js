@@ -1,8 +1,6 @@
 import fs from 'fs';
-import { scores } from "./game.js";
 
 const { GUILD_ID } = process.env;
-const SCORES_FILE = process.env.SCORES_FILE || "scores.json";
 const USED_CONTENTS_FILE = process.env.USED_CONTENTS_FILE || "used_contents.json";
 
 export function logsDateSeverity(severityCode) {
@@ -59,19 +57,6 @@ export function logsDateSeverity(severityCode) {
     return `[${year}-${month}-${day} ${hour}:${minute}:${second}]\t${severity}\t`;
 }
 
-export function loadScores() {
-  if (fs.existsSync(SCORES_FILE)) {
-    const raw = fs.readFileSync(SCORES_FILE);
-    scores = JSON.parse(raw);
-    console.log(logsDateSeverity("I") + "Lylitt Game : chargement des scores");
-  }
-}
-
-export function saveScores() {
-  fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
-  console.log(logsDateSeverity("I") + "Lylitt Game : sauvegarde des scores");
-}
-
 // loading already sent responses
 export function loadUsedContents() {
   if (fs.existsSync(USED_CONTENTS_FILE)) {
@@ -104,33 +89,4 @@ export async function fetchAllMemberIds(guild) {
   const members = await guild.members.fetch()
   console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : " + members.size + " membres trouvés sur le serveur");
   return [...members.keys()]
-}
-
-export async function countAbsentPoints(guild) {
-  const present = await fetchAllMemberIds(guild)
-  const presentSet = new Set(present)
-  let total = 0
-  let absentCount = 0
-  for (const [id, pts] of Object.entries(scores)) {
-    if (!presentSet.has(id)) {
-      total += Number(pts) || 0
-      absentCount++
-   }
-  }
-  console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : " + absentCount + " utilisateurs ne sont plus sur le serveur pour un total de " + total + " points à redistribuer");
-  return total
-}
-
-export async function purgeAbsentScores(guild) {
-  const present = await fetchAllMemberIds(guild)
-  const presentSet = new Set(present)
-
-  for (const id of Object.keys(scores)) {
-    if (!presentSet.has(id)) {
-        console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : suppression du joueur " + id + " et de ses " + scores[id] + " points");
-        delete scores[id];
-    }
-  }
-
-  saveScores()
 }

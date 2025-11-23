@@ -1,4 +1,4 @@
-import { logsDateSeverity } from "./utils/logs.js";
+import { logsDateSeverity } from "./utils.js";
 
 const TARGET_USER_ID = process.env.TARGET_USER_ID || "819527758501642290";
 const gf1Pattern = /(j.?ai|gé?).?(faim|f1|la dalle)/i;

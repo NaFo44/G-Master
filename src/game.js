@@ -6,7 +6,7 @@ import {
   getGuild,
   countAbsentPoints,
   purgeAbsentScores
-} from "./src/utils.js";
+} from "./utils.js";
 
 const LYLITT_USER_ID = process.env.LYLITT_USER_ID || "460073251352346624";
 const replyCounts = {};    // to count replies per game

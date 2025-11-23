@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { logsDateSeverity } from "./src/utils.js";
 import { handleMessage, handleMessageUpdate, messageReplyHandler } from "./src/messageHandlers.js";
 import { 

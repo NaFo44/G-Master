@@ -116,7 +116,7 @@ export async function countAbsentPoints(guild) {
       absentCount++
    }
   }
-  console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : " + absentCount + " utilisateurs ne sont plus sur le serveur pour un total de " + total + "points à redistribuer");
+  console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : " + absentCount + " utilisateurs ne sont plus sur le serveur pour un total de " + total + " points à redistribuer");
   return total
 }
 
@@ -126,7 +126,7 @@ export async function purgeAbsentScores(guild) {
 
   for (const id of Object.keys(scores)) {
     if (!presentSet.has(id)) {
-        console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : suppression du joueur " + id + " et de ses " + scores[id] + "points");
+        console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : suppression du joueur " + id + " et de ses " + scores[id] + " points");
         delete scores[id];
     }
   }

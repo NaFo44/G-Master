@@ -1,7 +1,4 @@
-import fs from 'fs';
-
 const { GUILD_ID } = process.env;
-const USED_CONTENTS_FILE = process.env.USED_CONTENTS_FILE || "used_contents.json";
 
 export function logsDateSeverity(severityCode) {
     let severity;
@@ -55,28 +52,6 @@ export function logsDateSeverity(severityCode) {
         }
     });
     return `[${year}-${month}-${day} ${hour}:${minute}:${second}]\t${severity}\t`;
-}
-
-// loading already sent responses
-export function loadUsedContents() {
-  if (fs.existsSync(USED_CONTENTS_FILE)) {
-    const raw = fs.readFileSync(USED_CONTENTS_FILE);
-    const data = JSON.parse(raw);
-    Object.keys(data).forEach(key => {
-      usedContents[key] = new Set(data[key]);
-    });
-    console.log(logsDateSeverity("I") + "Lylitt Game : chargement des réponses déjà envoyées");
-  }
-}
-// saving already sent responses
-export function saveUsedContents() {
-  fs.writeFileSync(USED_CONTENTS_FILE, JSON.stringify(usedContents, (key, value) => {
-    if (value instanceof Set) {
-      return Array.from(value);
-    }
-    return value;
-  }), null, 2);
-  console.log(logsDateSeverity("I") + "Lylitt Game : sauvegarde des réponses déjà envoyées");
 }
 
 // returns an instance of discord.js Guild

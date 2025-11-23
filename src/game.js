@@ -173,6 +173,9 @@ export default async function initGame(message){
   }
   
   if (message.author.id !== LYLITT_USER_ID && message.reference && !message.author.bot) {
+    const original = await message.channel.messages.fetch(message.reference.messageId);
+    if (original.author.id !== LYLITT_USER_ID || !original.content.toLowerCase().includes('grrr')) return;
+
     loadScores();
     const guild = await getGuild();
     const points = await countAbsentPoints(guild);
@@ -182,8 +185,6 @@ export default async function initGame(message){
       return;
     }
 
-    const original = await message.channel.messages.fetch(message.reference.messageId);
-    if (original.author.id !== LYLITT_USER_ID || !original.content.toLowerCase().includes('grrr')) return;
     const diffSec = Math.floor((Date.now() - original.createdTimestamp) / 1000);
 
     if (points - diffSec + 1 > 0) {

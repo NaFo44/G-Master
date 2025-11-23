@@ -41,27 +41,16 @@ export async function handleMessage(message) {
         { name: "sangliers", emojis: "🐗" }
     ];
 
-    console.log("before reactions");
-
     for (let i = 0; i < reactions.length; i++) {
-        console.log("a");
         if (new RegExp(reactions[i].name, "i").test(newMessage)) {
-            console.log("b");
             console.log(logsDateSeverity("I") + reactions[i].name + " : ajout d'une réaction");
-            console.log("c");
             try {
-                console.log("d");
                 await message.react(reactions[i].emojis);
-                console.log("e");
             } catch {
                 console.log(logsDateSeverity("E") + reactions[i].name + " : impossible d'ajouter une réaction");
             }
-            console.log("f");
         }
-        console.log("g");
     }
-
-    console.log("after reactions");
 
     if (/oui oui bien sûr bien sûûûr/i.test(newMessage) && message.author.id === TARGET_USER_ID) {
         console.log(logsDateSeverity("I") + "Fin de chasse : envoi du message");

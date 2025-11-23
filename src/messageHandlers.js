@@ -24,7 +24,8 @@ Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas bes
 
 const allowedChannels = [
   "1278672736910311465",
-  "1299853826001469561"
+  "1299853826001469561",
+  "1315805001603481660"
 ];
 
 console.log("messageHandlers.js loaded");

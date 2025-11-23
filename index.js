@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { logsDateSeverity } from "./src/utils.js";
+import initGame from "./src/game.js";
 import { handleMessage, handleMessageUpdate, messageReplyHandler } from "./src/messageHandlers.js";
 import { 
   Client,
@@ -13,6 +14,11 @@ import express from "express";
 import path from "path";
 import { execFile } from "child_process";
 import dotenv from "dotenv";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dotenv.config();
 
 const app = express();
@@ -137,6 +143,7 @@ client.on("interactionCreate", async interaction => {
 client.on("messageCreate", handleMessage);
 client.on("messageUpdate", handleMessageUpdate);
 client.on("messageCreate", messageReplyHandler);
+client.on("messageCreate", initGame);
 
 // startup
 client.login(DISCORD_TOKEN);

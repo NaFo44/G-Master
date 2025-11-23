@@ -16,7 +16,7 @@ let scores = {};
 let activeMessageId = null;
 let initialAuthorId = null;
 
-client.on('messageCreate', async (message) => {
+export default async function initGame(message){
   if (message.author.bot) return;
   const content = message.content.toLowerCase();
 
@@ -159,4 +159,4 @@ client.on('messageCreate', async (message) => {
       await message.react('❌');
     }
   }
-});
+}

@@ -27,6 +27,8 @@ const allowedChannels = [
   "1299853826001469561"
 ];
 
+console.log("messageHandlers.js loaded");
+
 export async function handleMessage(message) {
     if (message.author.bot) return;
     if (!allowedChannels.includes(message.channel.id)) return;
@@ -38,6 +40,8 @@ export async function handleMessage(message) {
         { name: "sangliers", emojis: "🐗" }
     ];
 
+    console.log("before reactions");
+
     for (let i = 0; i < reactions.length; i++) {
         if (new RegExp(reactions[i].name, "i").test(newMessage)) {
             console.log(logsDateSeverity("I") + reactions[i].name + " : ajout d'une réaction");
@@ -48,6 +52,8 @@ export async function handleMessage(message) {
             }
         }
     }
+
+    console.log("after reactions");
 
     if (/oui oui bien sûr bien sûûûr/i.test(newMessage) && message.author.id === TARGET_USER_ID) {
         console.log(logsDateSeverity("I") + "Fin de chasse : envoi du message");

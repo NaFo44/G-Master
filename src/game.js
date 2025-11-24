@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { logsDateSeverity } from "./utils.js";
-import { getGuild } from "./utils.js";
+import { getGuild, fetchAllMemberIds } from "./utils.js";
 
 const USED_CONTENTS_FILE = process.env.USED_CONTENTS_FILE || "used_contents.json";
 const SCORES_FILE = process.env.SCORES_FILE || "scores.json";

@@ -1,4 +1,20 @@
+import { 
+  Client,
+  GatewayIntentBits
+} from 'discord.js';
+
 const { GUILD_ID } = process.env;
+
+// discord.js client setup
+export const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildMembers
+  ],
+});
 
 export function logsDateSeverity(severityCode) {
     let severity;

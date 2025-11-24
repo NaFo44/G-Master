@@ -2,8 +2,6 @@ import { logsDateSeverity } from "./src/utils.js";
 import initGame from "./src/game.js";
 import { handleMessage, handleMessageUpdate, messageReplyHandler } from "./src/messageHandlers.js";
 import { 
-  Client,
-  GatewayIntentBits,
   REST,
   Routes,
   SlashCommandBuilder,
@@ -14,6 +12,7 @@ import path from "path";
 import { execFile } from "child_process";
 import dotenv from "dotenv";
 import { fileURLToPath } from 'url';
+import { client } from "./src/utils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,17 +42,6 @@ if (!GUILD_ID) {
     console.log(logsDateSeverity("C") + "Général : variable d'environnement GUILD_ID non définie");
     process.exit(1);
 }
-
-// discord.js client setup
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.GuildMembers
-  ],
-});
 
 // dynamic creation of slash commands
 const slashCommands = modes.map(mode =>

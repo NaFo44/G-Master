@@ -39,6 +39,10 @@ if (!CLIENT_ID) {
     console.log(logsDateSeverity("C") + "Général : variable d'environnement CLIENT_ID non définie");
     process.exit(1);
 }
+if (!GUILD_ID) {
+    console.log(logsDateSeverity("C") + "Général : variable d'environnement GUILD_ID non définie");
+    process.exit(1);
+}
 
 // discord.js client setup
 const client = new Client({

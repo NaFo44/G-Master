@@ -55,7 +55,7 @@ async function getGuild() {
 /**
  * Fetch all member IDs from a guild
  */
-export async function fetchAllMemberIds(guild) {
+async function fetchAllMemberIds(guild) {
   const now = Date.now();
 
   if (memberCache.size === 0 || now - lastCacheUpdate > CACHE_EXPIRY_MS) {

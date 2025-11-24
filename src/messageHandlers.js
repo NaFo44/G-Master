@@ -96,8 +96,9 @@ export async function handleMessage(message) {
         const image_bouffe = images_bouffe[Math.floor(Math.random() * images_bouffe.length)];
         try {
             await message.reply(image_bouffe);
+            console.log(logsDateSeverity("I") + "Image de bouffe (nouveau message) : image envoyée (\"" + image_bouffe + "\")");
         } catch (err) {
-            console.log(logsDateSeverity("E") + "Image de bouffe (nouveau message) : impossible d'envoyer l'image");
+            console.log(logsDateSeverity("E") + "Image de bouffe (nouveau message) : impossible d'envoyer l'image (\"" + image_bouffe + "\")");
         }
     }
 };
@@ -111,8 +112,9 @@ export async function handleMessageUpdate(oldMessage, newMessage) {
     const image_bouffe = images_bouffe[Math.floor(Math.random() * images_bouffe.length)];
     try {
       await newMessage.reply(image_bouffe);
+        console.log(logsDateSeverity("I") + "Image de bouffe (message modifié) : image envoyée (\"" + image_bouffe + "\")"");
     } catch (err) {
-        console.log(logsDateSeverity("E") + "Image de bouffe (message modifié) : impossible d'envoyer l'image");
+        console.log(logsDateSeverity("E") + "Image de bouffe (message modifié) : impossible d'envoyer l'image (\"" + image_bouffe + "\")"");
     }
   }
 };

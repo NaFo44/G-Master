@@ -190,7 +190,7 @@ export default async function initGame(message){
       return await message.react("❌");
     } else {
       console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : lancement après détection d'un \"Grrr\" (" + points + " point" + (points > 1 ? 's' : '') + " à redistribuer)");
-      return await message.reply("*" + points + "point" + (points > 1 ? 's' : '') + " à redistribuer :clock1230:*");
+      return await message.reply("*" + points + " point" + (points > 1 ? 's' : '') + " à gagner :clock1230:*");
     }
   }
   

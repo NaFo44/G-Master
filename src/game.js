@@ -179,10 +179,11 @@ export default async function initGame(message){
   }
 
   // redistribution handling
+  const guild = await getGuild();
+  const points = await countAbsentPoints(guild);
+
   if (message.author.id === LYLITT_USER_ID && content.includes("grrr") && !message.reference && !message.author.bot) {
     loadScores();
-    const guild = await getGuild();
-    const points = await countAbsentPoints(guild);
 
     if (points === 0) {
       console.log(logsDateSeverity("I") + "Lylitt Game (redistribution) : annulation du lancement après détection d'un \"Grrr\" (aucun point à redistribuer)");
@@ -204,8 +205,6 @@ export default async function initGame(message){
     }
 
     loadScores();
-    const guild = await getGuild();
-    const points = await countAbsentPoints(guild);
     if (points <= 0) {
       await message.react('❌');
       return;

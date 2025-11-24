@@ -41,8 +41,8 @@ async function registerCommands() {
     log.info("Registering slash commands...", { count: slashCommands.length });
 
     await rest.put(
-      Routes.applicationGuildCommands(config.CLIENT_ID, config.GUILD_ID),
-      { body: slashCommands }
+      Routes.applicationCommands(config.CLIENT_ID),
+      { body: [] }
     );
 
     log.success("Slash commands registered successfully");

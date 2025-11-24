@@ -141,7 +141,7 @@ function initializeClient(eventHandlers = {}) {
     client.on(Events.Debug, (info) => {
       // Filter out noisy heartbeat messages
       if (!info.includes("Heartbeat")) {
-        log.debug("Discord debug", { info });
+        log.debug("Discord debug", info);
       }
     });
   }

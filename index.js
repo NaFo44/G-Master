@@ -100,7 +100,7 @@ function setupShutdownHandlers() {
 
     try {
       // Destroy Discord client
-      client.destroy();
+      await client.destroy();
       log.info("Discord client disconnected");
 
       process.exit(0);

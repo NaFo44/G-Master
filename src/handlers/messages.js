@@ -1,5 +1,5 @@
-import logger from "./logger.js";
-import config, { ALLOWED_CHANNELS } from "./config.js";
+import logger from "../logger.js";
+import config, { ALLOWED_CHANNELS } from "../config.js";
 
 const log = logger.child("Messages");
 

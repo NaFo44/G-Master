@@ -1,47 +1,53 @@
-import { logsDateSeverity } from "./src/utils.js";
+import { logsDateSeverity, client } from "./src/utils.js";
 import initGame from "./src/game.js";
-import { handleMessage, handleMessageUpdate, messageReplyHandler } from "./src/messageHandlers.js";
-import { 
+import {
+  handleMessage,
+  handleMessageUpdate,
+  messageReplyHandler,
+} from "./src/messageHandlers.js";
+import {
   REST,
   Routes,
   SlashCommandBuilder,
-  MessageFlags
-} from 'discord.js';
+  MessageFlags,
+} from "discord.js";
 import express from "express";
 import path from "path";
 import { execFile } from "child_process";
 import dotenv from "dotenv";
-import { fileURLToPath } from 'url';
-import { client } from "./src/utils.js";
+import { fileURLToPath } from "url";
 
+// environment configuration
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 dotenv.config();
 
-const app = express();
+// configuration and constants
+const PORT = process.env.PORT || 3000;
+const LOG_CHANNEL_ID = "1315805001603481660";
 const modes = [
   { name: "default", description: "Recherche standard (insensible à la casse, substring)" },
   { name: "wholeword", description: "Recherche par mot complet (insensible à la casse)" },
   { name: "exact", description: "Recherche exacte (sensible à la casse, substring)" },
   { name: "wholeword-exact", description: "Recherche par mot complet ET sensible à la casse" },
 ];
-const LOG_CHANNEL_ID = "1315805001603481660";
 
-// verify environment variables
-const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID, PORT = 3000 } = process.env;
-if (!DISCORD_TOKEN) {
-    console.log(logsDateSeverity("C") + "Général : variable d'environnement DISCORD_TOKEN non définie");
+const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
+const requiredEnvVars = [
+  { name: "DISCORD_TOKEN", value: DISCORD_TOKEN },
+  { name: "CLIENT_ID", value: CLIENT_ID },
+  { name: "GUILD_ID", value: GUILD_ID },
+];
+
+for (const { name, value } of requiredEnvVars) {
+  if (!value) {
+    console.log(logsDateSeverity("C") + `Général : variable d'environnement ${name} non définie`);
     process.exit(1);
+  }
 }
-if (!CLIENT_ID) {
-    console.log(logsDateSeverity("C") + "Général : variable d'environnement CLIENT_ID non définie");
-    process.exit(1);
-}
-if (!GUILD_ID) {
-    console.log(logsDateSeverity("C") + "Général : variable d'environnement GUILD_ID non définie");
-    process.exit(1);
-}
+
+// initializing express app
+const app = express();
 
 // dynamic creation of slash commands
 const slashCommands = modes.map(mode =>
@@ -89,11 +95,6 @@ client.once("ready", async () => {
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(DISCORD_TOKEN);
   try {
-    /*
-    await rest.put(
-      Routes.applicationCommands(CLIENT_ID),
-      { body: slashCommands }
-    )*/
     await rest.put(
       Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
       { body: slashCommands }

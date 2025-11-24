@@ -194,9 +194,14 @@ export default async function initGame(message){
   }
   
   if (message.author.id !== LYLITT_USER_ID && message.reference && !message.author.bot) {
-    const original = await message.channel.messages.fetch(message.reference.messageId);
-    if (original.author.id !== LYLITT_USER_ID || !original.content.toLowerCase().includes('grrr')) return;
-
+    try {
+      const original = await message.channel.messages.fetch(message.reference.messageId);
+      if (original.author.id !== LYLITT_USER_ID || !original.content.toLowerCase().includes('grrr')) return;
+    } catch {
+      console.log(logsDateSeverity("E") + "Lylitt Game (redistribution) : impossible de récupérer le message original référencé");
+      return;
+    }
+    
     loadScores();
     const guild = await getGuild();
     const points = await countAbsentPoints(guild);

@@ -139,7 +139,7 @@ async function handleTextTransformations(message) {
 
   if (modified) {
     try {
-      const sent = await message.channel.send(newContent);
+      const sent = await message.channel.send({ content: newContent, allowedMentions: { parse: [] } });
       log.info("Sent transformed message");
 
       // Auto-delete after 30 seconds

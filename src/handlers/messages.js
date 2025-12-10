@@ -35,6 +35,7 @@ const FOOD_IMAGES = [
 const REACTIONS = [
   { name: "myrtilles", pattern: /myrtilles/i, emoji: "🫐" },
   { name: "sangliers", pattern: /sangliers/i, emoji: "🐗" },
+  { name: "explosion", pattern: /https:\/\/tenor.com\/view\/explosion-cat-gif-5858640239144030160/i, emoji: "💥" },
 ];
 
 const AUTO_REPLIES = [

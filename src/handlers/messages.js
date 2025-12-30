@@ -49,6 +49,12 @@ const AUTO_REPLIES = [
   },
 ];
 
+const NEW_YEAR_AUTO_REPLIES = [
+  { name: "Bonne année !", pattern: /.*bonn?e ann?ée?.*/i, response: "Bonne année !!!" },
+  { name: "Bananée !", pattern: /.*bann?anée?.*/i, response: "Toi t'es ban. Mais bonne année quand-même !" },
+  { name: "Boanné !", pattern: /.*boann?é.*/i, response: "Boanné à toi aussi !" },
+];
+
 const END_GAME_MESSAGE = `# GMilgram - C'est la fin !
 Ça y est ! Tu as terminé toutes les énigmes de la communauté !
 Mais qui dit énigme dit Coffre... Que tu recevras par la Poste (cadeau, pas besoin de partir en pleine nuit avec une pelle...).
@@ -93,6 +99,18 @@ function transformQuantum(text) {
     PATTERNS.quantum,
     "[quan-tic tac](https://www.youtube.com/watch?v=fmvqz0_KFX0)"
   );
+}
+
+/**
+ * Determine whether the given `date` has the same month and day as today.
+ * @param {Date} date
+ *
+ * @returns {Boolean}
+ */
+function isDayMonth (date) {  
+  const now = new Date()
+  return date.getDate() === now.getDate() &&
+         date.getMonth() === now.getMonth()
 }
 
 /**
@@ -172,6 +190,27 @@ async function handleAutoReplies(message) {
         log.error(`Failed to send auto-reply for "${reply.name}"`, {
           error: error.message,
         });
+      }
+    }
+  }
+}
+
+/**
+ * Handle new year auto-replies (bonne année, bananée, boanné, etc.)
+ */
+async function handleNewYearAutoReplies(message) {
+  if (isDayMonth(new Date('30-12'))) {
+    const content = message.content;
+    for (const reply of NEW_YEAR_AUTO_REPLIES) {
+      if (reply.pattern.test(content)) {
+        try {
+          await message.reply(reply.response);
+          log.debug(`Sent new year auto-reply: "${reply.name}"`);
+        } catch (error) {
+          log.error(`Failed to send new year auto-reply for "${reply.name}"`, {
+            error: error.message,
+          });
+        }
       }
     }
   }
@@ -267,6 +306,7 @@ async function handleMessageReply(message) {
   if (!isAllowedChannel(message.channel.id)) return;
 
   await handleAutoReplies(message);
+  await handleNewYearAutoReplies(message);
   await handleHungryMessage(message);
 }
 

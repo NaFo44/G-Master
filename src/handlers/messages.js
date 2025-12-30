@@ -51,7 +51,6 @@ const AUTO_REPLIES = [
 
 const NEW_YEAR_AUTO_REPLIES = [
   { name: "Bonne année !", pattern: /.*bonn?e ann?ée?.*/i, response: "Bonne année !!!" },
-  { name: "Bananée !", pattern: /.*bann?anée?.*/i, response: "Toi t'es ban. Mais bonne année quand-même !" },
   { name: "Boanné !", pattern: /.*boann?é.*/i, response: "Boanné à toi aussi !" },
 ];
 
@@ -199,7 +198,7 @@ async function handleAutoReplies(message) {
  * Handle new year auto-replies (bonne année, bananée, boanné, etc.)
  */
 async function handleNewYearAutoReplies(message) {
-  if (isDayMonth(new Date('30-12'))) {
+  if (isDayMonth(new Date('12-30'))) {
     const content = message.content;
     for (const reply of NEW_YEAR_AUTO_REPLIES) {
       if (reply.pattern.test(content)) {

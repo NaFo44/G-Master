@@ -51,7 +51,13 @@ const AUTO_REPLIES = [
 
 const NEW_YEAR_AUTO_REPLIES = [
   { name: "Bonne année !", pattern: /.*bonn?e ann?ée?.*/i, response: "Bonne année !!!" },
+  { name: "Bananée !", pattern: /.*bann?anée?.*/i, response: "Toi t'es ban. Mais bonne année quand-même ! :clown:" },
   { name: "Boanné !", pattern: /.*boann?é.*/i, response: "Boanné à toi aussi !" },
+];
+
+const NEW_YEAR_TOO_SOON_REPLIES = [
+  { name: "Bonne année !", pattern: /.*bonn?e ann?ée?.*/i, response: "Trop tôt :eyes:" },
+  { name: "Bananée !", pattern: /.*bann?anée?.*/i, response: "Trop tôt + t'es ban :clown:" },
 ];
 
 const END_GAME_MESSAGE = `# GMilgram - C'est la fin !
@@ -156,7 +162,7 @@ async function handleTextTransformations(message) {
 
   if (modified) {
     try {
-      const sent = await message.channel.send({ content: newContent, allowedMentions: { parse: [] } });
+      const sent = await message.reply({ content: newContent, allowedMentions: { parse: [] } });
       log.info("Sent transformed message");
 
       // Auto-delete after 30 seconds
@@ -183,7 +189,7 @@ async function handleAutoReplies(message) {
   for (const reply of AUTO_REPLIES) {
     if (reply.pattern.test(content)) {
       try {
-        await message.channel.send(reply.response);
+        await message.reply(reply.response);
         log.debug(`Sent auto-reply: "${reply.name}"`);
       } catch (error) {
         log.error(`Failed to send auto-reply for "${reply.name}"`, {
@@ -198,7 +204,21 @@ async function handleAutoReplies(message) {
  * Handle new year auto-replies (bonne année, bananée, boanné, etc.)
  */
 async function handleNewYearAutoReplies(message) {
-  if (isDayMonth(new Date('12-30'))) {
+  if (isDayMonth(new Date('12-31'))) {
+    const content = message.content;
+    for (const reply of NEW_YEAR_TOO_SOON_REPLIES) {
+      if (reply.pattern.test(content)) {
+        try {
+          await message.reply(reply.response);
+          log.debug(`Sent too soon new year auto-reply: "${reply.name}"`);
+        } catch (error) {
+          log.error(`Failed to send too soon new year auto-reply for "${reply.name}"`, {
+            error: error.message,
+          });
+        }
+      }
+    }
+  } else if (isDayMonth(new Date('01-01'))) {
     const content = message.content;
     for (const reply of NEW_YEAR_AUTO_REPLIES) {
       if (reply.pattern.test(content)) {

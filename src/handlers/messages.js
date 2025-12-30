@@ -50,13 +50,13 @@ const AUTO_REPLIES = [
 ];
 
 const NEW_YEAR_AUTO_REPLIES = [
-  { name: "Bonne année !", pattern: /bo+n+e+[ ]*an+[ée]+/i, response: "Bonne année !!! :partying_face:" },
+  { name: "Bonne année !", pattern: /bo+n+e*[ ]*an+[ée]+/i, response: "Bonne année !!! :partying_face:" },
   { name: "Bananée !", pattern: /ba+n+a+n+[ée]+/i, response: "Toi t'es ban. Mais bonne année quand-même ! :clown:" },
   { name: "Boanné !", pattern: /boan+[ée]+/i, response: "Boannée à toi aussi ! :tada:" },
 ];
 
 const NEW_YEAR_TOO_SOON_REPLIES = [
-  { name: "Bonne année !", pattern: /bo+n+e+[ ]*an+[ée]+/i, response: "Trop tôt :eyes:" },
+  { name: "Bonne année !", pattern: /bo+n+e*[ ]*an+[ée]+/i, response: "Trop tôt :eyes:" },
   { name: "Bananée !", pattern: /ba+n+a+n+[ée]+/i, response: "Trop tôt + t'es ban :clown:" },
   { name: "Boanné !", pattern: /boan+[ée]+/i, response: "Boannée en avance ! :tada:" },
 ];

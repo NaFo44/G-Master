@@ -222,8 +222,8 @@ async function handleNewYearAutoReplies(message) {
       if (reply.pattern.test(content)) {
         try {
           //await message.reply(reply.response);
-          await message.reply(parisTZFormat.format(new Date('12-31'))));
-          await message.reply(parisTZFormat.format(new Date())));
+          await message.reply(parisTZFormat.format(new Date('12-31')));
+          await message.reply(parisTZFormat.format(new Date()));
           log.debug(`Sent too soon new year auto-reply: "${reply.name}"`);
         } catch (error) {
           log.error(`Failed to send too soon new year auto-reply for "${reply.name}"`, {

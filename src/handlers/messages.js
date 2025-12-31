@@ -107,6 +107,17 @@ function transformQuantum(text) {
   );
 }
 
+const { DateTimeFormat } = Intl;
+const parisTZFormat = new DateTimeFormat('fr-FR', {
+  timeZone: 'Europe/Paris',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+});
+
 /**
  * Determine whether the given `date` has the same month and day as today.
  * @param {Date} date
@@ -114,7 +125,7 @@ function transformQuantum(text) {
  * @returns {Boolean}
  */
 function isDayMonth (date) {  
-  const now = new Date()
+  const now = parisTZFormat.format(new Date())
   return date.getDate() === now.getDate() &&
          date.getMonth() === now.getMonth()
 }
@@ -205,12 +216,14 @@ async function handleAutoReplies(message) {
  * Handle new year auto-replies (bonne année, bananée, boanné, etc.)
  */
 async function handleNewYearAutoReplies(message) {
-  if (isDayMonth(new Date('12-31'))) {
+  if (isDayMonth(parisTZFormat.format(new Date('12-31')))) {
     const content = message.content;
     for (const reply of NEW_YEAR_TOO_SOON_REPLIES) {
       if (reply.pattern.test(content)) {
         try {
-          await message.reply(reply.response);
+          //await message.reply(reply.response);
+          await message.reply(parisTZFormat.format(new Date('12-31'))));
+          await message.reply(parisTZFormat.format(new Date())));
           log.debug(`Sent too soon new year auto-reply: "${reply.name}"`);
         } catch (error) {
           log.error(`Failed to send too soon new year auto-reply for "${reply.name}"`, {
@@ -219,7 +232,7 @@ async function handleNewYearAutoReplies(message) {
         }
       }
     }
-  } else if (isDayMonth(new Date('01-01'))) {
+  } else if (isDayMonth(parisTZFormat.format(new Date('01-01')))) {
     const content = message.content;
     for (const reply of NEW_YEAR_AUTO_REPLIES) {
       if (reply.pattern.test(content)) {

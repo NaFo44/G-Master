@@ -107,27 +107,18 @@ function transformQuantum(text) {
   );
 }
 
-const { DateTimeFormat } = Intl;
-const parisTZFormat = new DateTimeFormat('fr-FR', {
+// IA :|
+const fmt = new Intl.DateTimeFormat('fr-FR', {
   timeZone: 'Europe/Paris',
-  year: 'numeric',
   month: '2-digit',
   day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
 });
 
-/**
- * Determine whether the given `date` has the same month and day as today.
- * @param {Date} date
- *
- * @returns {Boolean}
- */
-function isDayMonth (date) {  
-  const now = parisTZFormat.format(new Date())
-  return date.getDate() === now.getDate() &&
-         date.getMonth() === now.getMonth()
+function getParisMonthDay() {
+  const parts = fmt.formatToParts(new Date());
+  const month = parts.find(p => p.type === 'month').value;
+  const day = parts.find(p => p.type === 'day').value;
+  return `${month}-${day}`;
 }
 
 /**
@@ -216,14 +207,12 @@ async function handleAutoReplies(message) {
  * Handle new year auto-replies (bonne année, bananée, boanné, etc.)
  */
 async function handleNewYearAutoReplies(message) {
-  if (isDayMonth(parisTZFormat.format(new Date('12-31')))) {
+  if (getParisMonthDay() === '12-31') {
     const content = message.content;
     for (const reply of NEW_YEAR_TOO_SOON_REPLIES) {
       if (reply.pattern.test(content)) {
         try {
-          //await message.reply(reply.response);
-          await message.reply(parisTZFormat.format(new Date('12-31')));
-          await message.reply(parisTZFormat.format(new Date()));
+          await message.reply(reply.response);
           log.debug(`Sent too soon new year auto-reply: "${reply.name}"`);
         } catch (error) {
           log.error(`Failed to send too soon new year auto-reply for "${reply.name}"`, {
@@ -232,7 +221,7 @@ async function handleNewYearAutoReplies(message) {
         }
       }
     }
-  } else if (isDayMonth(parisTZFormat.format(new Date('01-01')))) {
+  } else if (getParisMonthDay() === '01-01') {
     const content = message.content;
     for (const reply of NEW_YEAR_AUTO_REPLIES) {
       if (reply.pattern.test(content)) {

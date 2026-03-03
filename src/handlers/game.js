@@ -397,7 +397,7 @@ async function handleGameMessage(message) {
 
   // Handle redistribution trigger ("grrr" from Lylitt)
   if (
-    (message.author.id === config.LYLITT_USER_ID || message.author.id === config.ADMIN_USER_ID) &&
+    message.author.id === config.LYLITT_USER_ID &&
     content.includes("grrr") &&
     !message.reference
   ) {

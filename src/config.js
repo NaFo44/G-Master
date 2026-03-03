@@ -86,6 +86,10 @@ const configDefinitions = {
     default: "460073251352346624",
     description: "User ID that triggers the Lylitt game",
   },
+  ADMIN_USER_ID: {
+    required: false,
+    description: "Bot owner Discord user ID",
+  },
   TARGET_USER_ID: {
     required: false,
     default: "819527758501642290",

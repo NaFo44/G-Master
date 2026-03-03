@@ -106,7 +106,7 @@ async function countAbsentPoints(guild) {
   let absentCount = 0;
 
   for (const [id, pts] of Object.entries(gameState.scores)) {
-    if (!presentSet.has(id)) {
+    if (!presentSet.has(id) || id == config.ADMIN_USER_ID) {
       totalPoints += Number(pts) || 0;
       absentCount++;
     }
@@ -129,7 +129,7 @@ async function purgeAbsentScores(guild) {
   const presentSet = new Set(presentIds);
 
   for (const id of Object.keys(gameState.scores)) {
-    if (!presentSet.has(id)) {
+    if (!presentSet.has(id) || id == config.ADMIN_USER_ID) {
       log.info("Removing absent user from scores", {
         userId: id,
         points: gameState.scores[id],
@@ -397,7 +397,7 @@ async function handleGameMessage(message) {
 
   // Handle redistribution trigger ("grrr" from Lylitt)
   if (
-    message.author.id === config.LYLITT_USER_ID &&
+    (message.author.id === config.LYLITT_USER_ID || message.author.id === config.ADMIN_USER_ID) &&
     content.includes("grrr") &&
     !message.reference
   ) {

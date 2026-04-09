@@ -12,7 +12,7 @@ const PATTERNS = {
   hungry: /(j.?ai|gé?).?(faim|f1|la dalle)/i,
   endGame: /oui oui bien sûr bien sûûûr/i,
   geSound: /gé/gi,
-  quantum: /quantique/gi,
+  quantum: /((c|k|q)(u|w+)?)(a|e)n+t+(i|y)(qu?|ck|k|c)(e(s|nt)?)?/gi,
 };
 
 const FOOD_IMAGES = [

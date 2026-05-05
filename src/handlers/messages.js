@@ -77,17 +77,20 @@ const AUTO_REPLIES = [
   {
       name: "quoi → feur",
       pattern: /^.*quoi[ .!?]*$/i,
-      response: "feur."
+      response: "feur.",
+      responsePattern: /^feur.*$/i
   },
   {
       name: "oui → stiti",
       pattern: /^.*oui[ .!?]*$/i,
-      response: "stiti."
+      response: "stiti.",
+      responsePattern: /^stiti.*$/i
   },
   {
       name: "non → bril",
       pattern: /^.*non[ .!?]*$/i,
-      response: "bril."
+      response: "bril.",
+      responsePattern: /^bril.*$/i
   },
   {
       name: "bonne nuit → medbed",
@@ -223,7 +226,7 @@ async function handleTextTransformations(message) {
   // Transform "gé" to "G"
   if (PATTERNS.geSound.test(content)) {
     const statusData = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
-    if (toBeDisabled.every(key => statusData[key] === false)) {
+    if (!toBeDisabled.every(key => statusData[key] === false)) {
         newContent = transformGeToG(newContent);
         modified = true;
         log.debug('Transformed "gé" to "G"');
@@ -274,7 +277,6 @@ async function handleAutoReplies(message) {
           error: error.message,
         });
       }
-      disableAnswer(reply.name);
     }
   }
 }

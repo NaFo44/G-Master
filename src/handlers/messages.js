@@ -79,7 +79,7 @@ const AUTO_REPLIES = [
       pattern: /^.*quoi[ .!?]*$/i,
       response: "feur.",
       responsePattern: /^feur.*$/i,
-      endReply: 'Nooooooooooooooooon !!!'
+      endReply: ':scream::scream::scream: Nooooooooooooooooon !!!'
   },
   {
       name: "oui → stiti",
@@ -412,20 +412,26 @@ async function handleMessageReply(message) {
   // TEMP // IA
   // Vérifier si c'est une réponse à un message du bot
   if (message.reference?.messageId) {
+      console.log('1');
     try {
       const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
       
       // Vérifier que c'est bien le bot qui a envoyé le message original
       if (repliedMessage.author.bot) {
+      console.log('2');
         const content = repliedMessage.content;
         
         // Chercher quel AUTO_REPLY correspond à ce message du bot
         for (const reply of AUTO_REPLIES) {
+      console.log('3');
           if (!toBeDisabled.includes(reply.name)) continue;
+      console.log('4');
           // Vérifier si le message du bot correspond à la réponse attendue
           if (reply.responsePattern && reply.responsePattern.test(content)) {
+      console.log('5');
             // Vérifier si la réponse de l'utilisateur correspond au pattern de réponse
             if (reply.responsePattern.test(message.content)) {
+      console.log('6');
               await message.reply(reply.endReply);
               disableAnswer(reply.name);
             }

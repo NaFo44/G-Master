@@ -79,21 +79,21 @@ const AUTO_REPLIES = [
       pattern: /^.*quoi[ .!?]*$/i,
       response: "feur.",
       responsePattern: /^feur.*$/i,
-      endReply: ':scream::scream::scream: Nooooooooooooooooon !!!'
+      endReply: "Ça va pas, non ?!"
   },
   {
       name: "oui → stiti",
       pattern: /^.*oui+[ .!?]*$/i,
       response: "stiti.",
       responsePattern: /^stiti.*$/i,
-      endReply: "Maaaaaaais c'est pas drôle, tu veux que je réponde quoi ?"
+      endReply: "T'es complètement fou ou quoi ?!"
   },
   {
       name: "non → bril",
       pattern: /^.*no+n[ .!?]*$/i,
       response: "bril.",
       responsePattern: /^bril.*$/i,
-      endReply: "C'est fini, oui ?!"
+      endReply: "Veux-tu arrêter, oui ?!"
   },
   {
       name: "bonne nuit → medbed",

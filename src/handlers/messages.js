@@ -4,13 +4,13 @@ import config, { ALLOWED_CHANNELS } from "../config.js";
 // TEMP
 const statusFile='/srv/mount/lylitt_game/status.json';
 import fs from "fs";
-
-function disableAnswer(gameName) {
-  const toBeDisabled = [
+const toBeDisabled = [
     "quoi → feur",
     "oui → stiti",
     "non → bril"
-  ]
+]
+
+function disableAnswer(gameName) {
   if(!toBeDisabled.includes(gameName)) return;
   try {
       const statusData = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
@@ -222,9 +222,12 @@ async function handleTextTransformations(message) {
 
   // Transform "gé" to "G"
   if (PATTERNS.geSound.test(content)) {
-    newContent = transformGeToG(newContent);
-    modified = true;
-    log.debug('Transformed "gé" to "G"');
+    const statusData = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+    if (toBeDisabled.every(key => statusData[key] === false)) {
+        newContent = transformGeToG(newContent);
+        modified = true;
+        log.debug('Transformed "gé" to "G"');
+    }
   }
 
   // Transform "quantique" to "quan-tic tac"

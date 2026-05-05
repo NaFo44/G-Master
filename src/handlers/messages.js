@@ -235,7 +235,7 @@ async function handleAutoReplies(message) {
   const content = message.content;
 
   for (const reply of AUTO_REPLIES) {
-    const statusData = JSON.parse(await fs.readFile(statusFile, 'utf8'));
+    const statusData = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
     if (reply.pattern.test(content) && statusData[reply.name]) {
       try {
         await message.reply(reply.response);

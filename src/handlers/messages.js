@@ -1,5 +1,6 @@
 import logger from "../logger.js";
 import config, { ALLOWED_CHANNELS } from "../config.js";
+import fs from "fs";
 
 const log = logger.child("Messages");
 

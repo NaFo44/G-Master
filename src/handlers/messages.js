@@ -427,7 +427,7 @@ async function handleMessageReply(message) {
           if (!toBeDisabled.includes(reply.name)) continue;
       console.log('4');
           // Vérifier si le message du bot correspond à la réponse attendue
-          if (reply.responsePattern.test(content)) {
+          if (reply.pattern.test(content)) {
       console.log('5');
             // Vérifier si la réponse de l'utilisateur correspond au pattern de réponse
             if (reply.responsePattern.test(message.content)) {

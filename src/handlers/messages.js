@@ -33,32 +33,75 @@ const FOOD_IMAGES = [
 ];
 
 const REACTIONS = [
-  { name: "myrtilles", pattern: /myrtilles/i, emoji: "🫐" },
-  { name: "sangliers", pattern: /sangliers/i, emoji: "🐗" },
-  { name: "explosion", pattern: /https:\/\/tenor.com\/view\/explosion-cat-gif-5858640239144030160/i, emoji: "💥" },
+  {
+      name: "myrtilles",
+      pattern: /myrtilles/i,
+      emoji: "🫐"
+  },
+  {
+      name: "sangliers",
+      pattern: /sangliers/i,
+      emoji: "🐗"
+  },
 ];
 
 const AUTO_REPLIES = [
-  { name: "quoi → feur", pattern: /^.*quoi[ .!?]*$/i, response: "feur." },
-  { name: "oui → stiti", pattern: /^.*oui[ .!?]*$/i, response: "stiti." },
-  { name: "non → bril", pattern: /^.*non[ .!?]*$/i, response: "bril." },
   {
-    name: "bonne nuit → medbed",
-    pattern: /^.*bonne nuit.*$/i,
-    response: "Medbed activé !",
+      name: "quoi → feur",
+      pattern: /^.*quoi[ .!?]*$/i,
+      response: "feur."
+  },
+  {
+      name: "oui → stiti",
+      pattern: /^.*oui[ .!?]*$/i,
+      response: "stiti."
+  },
+  {
+      name: "non → bril",
+      pattern: /^.*non[ .!?]*$/i,
+      response: "bril."
+  },
+  {
+      name: "bonne nuit → medbed",
+      pattern: /^.*bonne nuit.*$/i,
+      response: "Medbed activé !"
   },
 ];
 
 const NEW_YEAR_AUTO_REPLIES = [
-  { name: "Bonne année !", pattern: /bo+n+e*[ ]*an+[ée]+/i, response: "Bonne année !!! :partying_face:" },
-  { name: "Bananée !", pattern: /ba+n+a+n+[ée]+/i, response: "Toi t'es ban. Mais bonne année quand-même ! :clown:" },
-  { name: "Boanné !", pattern: /boan+[ée]+/i, response: "Boannée à toi aussi ! :tada:" },
+  {
+      name: "Bonne année !",
+      pattern: /bo+n+e*[ ]*an+[ée]+/i,
+      response: "Bonne année !!! :partying_face:"
+  },
+  {
+      name: "Bananée !",
+      pattern: /ba+n+a+n+[ée]+/i,
+      response: "Toi t'es ban. Mais bonne année quand-même ! :clown:"
+  },
+  {
+      name: "Boanné !",
+      pattern: /boan+[ée]+/i,
+      response: "Boannée à toi aussi ! :tada:"
+  },
 ];
 
 const NEW_YEAR_TOO_SOON_REPLIES = [
-  { name: "Bonne année !", pattern: /bo+n+e*[ ]*an+[ée]+/i, response: "Trop tôt :eyes:" },
-  { name: "Bananée !", pattern: /ba+n+a+n+[ée]+/i, response: "Trop tôt + t'es ban :clown:" },
-  { name: "Boanné !", pattern: /boan+[ée]+/i, response: "Boannée en avance ! :tada:" },
+  {
+      name: "Bonne année !",
+      pattern: /bo+n+e*[ ]*an+[ée]+/i,
+      response: "Trop tôt :eyes:"
+  },
+  {
+      name: "Bananée !",
+      pattern: /ba+n+a+n+[ée]+/i,
+      response: "Trop tôt + t'es ban :clown:"
+  },
+  {
+      name: "Boanné !",
+      pattern: /boan+[ée]+/i,
+      response: "Boannée en avance ! :tada:"
+  },
 ];
 
 const END_GAME_MESSAGE = `# GMilgram - C'est la fin !
@@ -186,11 +229,13 @@ async function handleTextTransformations(message) {
 /**
  * Handle auto-replies (quoi/feur, oui/stiti, etc.)
  */
+const statusFile='/srv/mount/lylitt_game/status.json';
 async function handleAutoReplies(message) {
   const content = message.content;
 
   for (const reply of AUTO_REPLIES) {
-    if (reply.pattern.test(content)) {
+    const statusData = JSON.parse(await fs.readFile(statusFile, 'utf8'));
+    if (reply.pattern.test(content) && statusData[reply.name]) {
       try {
         await message.reply(reply.response);
         log.debug(`Sent auto-reply: "${reply.name}"`);

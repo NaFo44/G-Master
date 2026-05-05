@@ -85,14 +85,14 @@ const AUTO_REPLIES = [
       name: "oui → stiti",
       pattern: /^.*oui+[ .!?]*$/i,
       response: "stiti.",
-      responsePattern: /^stiti.*$/i
+      responsePattern: /^stiti.*$/i,
       endReply: 'Maaaaaaais c''est pas drôle, tu veux que je réponde quoi ?'
   },
   {
       name: "non → bril",
       pattern: /^.*no+n[ .!?]*$/i,
       response: "bril.",
-      responsePattern: /^bril.*$/i
+      responsePattern: /^bril.*$/i,
       endReply: 'C''est fini, oui ?!'
   },
   {

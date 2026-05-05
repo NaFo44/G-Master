@@ -1,6 +1,33 @@
 import logger from "../logger.js";
 import config, { ALLOWED_CHANNELS } from "../config.js";
+
+// TEMP
+const statusFile='/srv/mount/lylitt_game/status.json';
 import fs from "fs";
+
+function disableAnswer(gameName) {
+  const toBeDisabled = [
+    "quoi → feur",
+    "oui → stiti",
+    "non → bril"
+  ]
+  if(!toBeDisabled.includes(gameName)) return;
+  try {
+      const statusData = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+      
+      if (!(gameName in statusData)) {
+         throw new Error(`La variable "${gameName}" n'existe pas dans le fichier.`);
+      }
+
+      statusData[gameName] = false;
+      fs.writeFileSync(statusFile, JSON.stringify(statusData, null, 2));
+      console.log(`La réponse "${gameName}" a été désactivée.`);
+  } catch (error) {
+      console.error('Erreur écriture:', error.message);
+  }
+}
+// temp
+
 
 const log = logger.child("Messages");
 
@@ -230,7 +257,6 @@ async function handleTextTransformations(message) {
 /**
  * Handle auto-replies (quoi/feur, oui/stiti, etc.)
  */
-const statusFile='/srv/mount/lylitt_game/status.json';
 async function handleAutoReplies(message) {
   const content = message.content;
 
@@ -245,6 +271,7 @@ async function handleAutoReplies(message) {
           error: error.message,
         });
       }
+      disableAnswer(reply.name);
     }
   }
 }

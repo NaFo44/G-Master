@@ -78,19 +78,22 @@ const AUTO_REPLIES = [
       name: "quoi → feur",
       pattern: /^.*quoi[ .!?]*$/i,
       response: "feur.",
-      responsePattern: /^feur.*$/i
+      responsePattern: /^feur.*$/i,
+      endReply: 'Nooooooooooooooooon !!!'
   },
   {
       name: "oui → stiti",
-      pattern: /^.*oui[ .!?]*$/i,
+      pattern: /^.*oui+[ .!?]*$/i,
       response: "stiti.",
       responsePattern: /^stiti.*$/i
+      endReply: 'Maaaaaaais c''est pas drôle, tu veux que je réponde quoi ?'
   },
   {
       name: "non → bril",
-      pattern: /^.*non[ .!?]*$/i,
+      pattern: /^.*no+n[ .!?]*$/i,
       response: "bril.",
       responsePattern: /^bril.*$/i
+      endReply: 'C''est fini, oui ?!'
   },
   {
       name: "bonne nuit → medbed",
@@ -404,6 +407,37 @@ async function handleMessageReply(message) {
 
   // Only process messages from allowed channels
   if (!isAllowedChannel(message.channel.id)) return;
+
+
+  // TEMP // IA
+  // Vérifier si c'est une réponse à un message du bot
+  if (message.reference?.messageId) {
+    try {
+      const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
+      
+      // Vérifier que c'est bien le bot qui a envoyé le message original
+      if (repliedMessage.author.bot) {
+        const content = repliedMessage.content;
+        
+        // Chercher quel AUTO_REPLY correspond à ce message du bot
+        for (const reply of AUTO_REPLIES) {
+          if (!toBeDisabled.includes(reply.name)) continue;
+          // Vérifier si le message du bot correspond à la réponse attendue
+          if (reply.responsePattern && reply.responsePattern.test(content)) {
+            // Vérifier si la réponse de l'utilisateur correspond au pattern de réponse
+            if (reply.responsePattern.test(message.content)) {
+              await message.reply(reply.endReply);
+              disableAnswer(reply.name);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      log.error('Failed to fetch replied message', { error: error.message });
+    }
+  }
+  // temp
+
 
   await handleAutoReplies(message);
   await handleNewYearAutoReplies(message);

@@ -9,3 +9,4 @@ export {
 } from "./messages.js";
 export { handleGameMessage } from "./game.js";
 export { handleInteraction, registerCommands } from "./commands.js";
+export { handleYoutubeMessage, handleYoutubeReactionAdd } from "./youtube.js";

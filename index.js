@@ -10,6 +10,8 @@ import {
   handleGameMessage,
   handleInteraction,
   registerCommands,
+  handleYoutubeMessage,
+  handleYoutubeReactionAdd,
 } from "./src/handlers/index.js";
 
 const log = logger.child("Main");
@@ -52,6 +54,10 @@ function setupEventHandlers() {
   // Message creation events
   client.on(Events.MessageCreate, async (message) => {
     try {
+      // Relay + delete tracked Youtube links first; skip other handlers if handled
+      const relayed = await handleYoutubeMessage(message);
+      if (relayed) return;
+
       // Run handlers in sequence to avoid conflicts
       await handleMessage(message);
       await handleMessageReply(message);
@@ -60,6 +66,18 @@ function setupEventHandlers() {
       log.error("Error handling message", {
         error: error.message,
         messageId: message.id,
+      });
+    }
+  });
+
+  // Reaction events (🗑️ to delete a relayed Youtube message)
+  client.on(Events.MessageReactionAdd, async (reaction, user) => {
+    try {
+      await handleYoutubeReactionAdd(reaction, user);
+    } catch (error) {
+      log.error("Error handling reaction add", {
+        error: error.message,
+        messageId: reaction.message?.id,
       });
     }
   });

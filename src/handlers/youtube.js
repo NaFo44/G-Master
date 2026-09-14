@@ -7,13 +7,14 @@ const log = logger.child("Youtube");
 /**
  * Youtube Tracking Handler Module
  *
- * Detects Youtube links (classic/short/music) carrying the `si=` tracking
- * parameter, re-sends the message as the bot with an embed crediting the
+ * Detects Youtube links (classic/short/music) carrying a tracking parameter
+ * (`si=`, `is=`, `pp=`), re-sends the message as the bot with an embed crediting the
  * author, deletes the original, and lets the author remove the relayed
  * message with a 🗑️ reaction.
  */
 
 const TRASH_EMOJI = "🗑️";
+const TRACKING_PARAMS = ["si", "is", "pp"];
 const EXPLANATION_AUTODELETE_MS = 20_000;
 
 const YOUTUBE_URL_REGEX =
@@ -23,12 +24,14 @@ const YOUTUBE_URL_REGEX =
 const relayOwners = new Map();
 
 /**
- * Strip the `si` tracking parameter from a Youtube URL
+ * Strip every known tracking parameter from a Youtube URL
  */
 function stripTrackingParam(rawUrl) {
   try {
     const url = new URL(rawUrl);
-    url.searchParams.delete("si");
+    for (const param of TRACKING_PARAMS) {
+      url.searchParams.delete(param);
+    }
     return url.toString();
   } catch {
     return rawUrl;
@@ -36,14 +39,16 @@ function stripTrackingParam(rawUrl) {
 }
 
 /**
- * Check whether the content contains at least one Youtube link with `?si=`
+ * Check whether the content contains at least one Youtube link carrying a
+ * tracking parameter
  */
 function hasTrackedYoutubeLink(content) {
   const matches = content.match(YOUTUBE_URL_REGEX);
   if (!matches) return false;
   return matches.some((match) => {
     try {
-      return new URL(match).searchParams.has("si");
+      const { searchParams } = new URL(match);
+      return TRACKING_PARAMS.some((param) => searchParams.has(param));
     } catch {
       return false;
     }
@@ -83,7 +88,7 @@ function buildAllowedMentions(message) {
 async function sendTrackingExplanation(channel) {
   try {
     const explanation = await channel.send(
-      "🔍 Ce lien Youtube contenait un paramètre de suivi (`si=`) qui permet " +
+      "🔍 Ce lien Youtube contenait un paramètre de suivi (`si=`, `is=` ou `pp=`) qui permet " +
         "d'identifier qui a partagé le lien et par où il a circulé. Il a été " +
         "retiré automatiquement pour protéger ta vie privée et celle des autres."
     );
